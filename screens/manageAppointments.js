@@ -15,7 +15,7 @@ ManageAppointments.navigationOptions = navData => {
     return {
       headerTitle: "Manage Appointments",
       headerLeft: () => (
-        <HeaderButtons>
+        <HeaderButtons HeaderButtonComponent={HeaderButton}>
           <Item
             title="menu"
             iconName="ios-menu"

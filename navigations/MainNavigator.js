@@ -4,10 +4,14 @@ import { Platform, Text } from 'react-native';
 import { createDrawerNavigator } from 'react-navigation-drawer';
 import Homepage from '../screens/homepage';
 import ManageAppointments from '../screens/manageAppointments';
+import ServiceScreen from '../screens/serviceScreen';
 
 const MainNavigator = createStackNavigator({
     homeScreen: {
         screen: Homepage
+    },
+    serviceScreen: {
+        screen: ServiceScreen
     }
 });
 
