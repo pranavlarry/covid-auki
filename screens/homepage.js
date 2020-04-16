@@ -9,15 +9,17 @@ import HeaderButton from "../components/headerButton";
 import AllServiceCat from "../components/allServiceCategories";
 import CategoryGridTile from '../components/CategoryGridTile';
 import { CATEGORIES } from "../dummyData/categories";
+import * as SetLoc from '../store/actions/user';
+import { useDispatch } from 'react-redux';
 
 
 // AIzaSyAGDHLqd2GWGd3n3ia3dkwYek926FSyecI
 const Homepage = (props) => {
   const [search, updateSearch] = useState("");
   const [isFetching, setIsFetching] = useState(false);
-  const [pickedLocation, setPickedLocation] = useState();
   const [filteredCat,UpdateFilteredCat] = useState(CATEGORIES);
 
+  const dispatch = useDispatch();
 
   const searchData=useCallback((val)=> {
     let result = [];
@@ -69,11 +71,15 @@ const Homepage = (props) => {
       const location = await Location.getCurrentPositionAsync({
         timeout: 5000,
       });
-      console.log(location)
-      setPickedLocation({
+    //   setPickedLocation({
+    //     lat: location.coords.latitude,
+    //     lng: location.coords.longitude,
+    //   });
+    console.log(location)
+      dispatch(SetLoc.setLocation({
         lat: location.coords.latitude,
         lng: location.coords.longitude,
-      });
+      }));
       //   Geocoder.from(pickedLocation.lat, pickedLocation.lng)
       // 	.then(json => {
       // 	var addressComponent = json.results[0].address_components[0];

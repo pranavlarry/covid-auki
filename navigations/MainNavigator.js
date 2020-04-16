@@ -5,6 +5,7 @@ import { createDrawerNavigator } from 'react-navigation-drawer';
 import Homepage from '../screens/homepage';
 import ManageAppointments from '../screens/manageAppointments';
 import ServiceScreen from '../screens/serviceScreen';
+import BookingScreen from '../screens/bookingScreen';
 
 const MainNavigator = createStackNavigator({
     homeScreen: {
@@ -12,6 +13,9 @@ const MainNavigator = createStackNavigator({
     },
     serviceScreen: {
         screen: ServiceScreen
+    },
+    bookingScreen: {
+        screen: BookingScreen
     }
 });
 
