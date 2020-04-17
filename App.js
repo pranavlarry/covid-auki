@@ -4,6 +4,11 @@ import { createStore, combineReducers, applyMiddleware } from 'redux';
 import userReducer from './store/reducer/user';
 import businessReducers from './store/reducer/business';
 import { Provider } from 'react-redux';
+import ReduxThunk from 'redux-thunk';
+import * as firebase from "firebase";
+
+
+
 // import * as Font from "expo-font";
 // import { AppLoading } from "expo";
 
@@ -13,7 +18,7 @@ const rootReducer = combineReducers({
 
 });
 
-const store = createStore(rootReducer);
+const store = createStore(rootReducer,applyMiddleware(ReduxThunk));
 
 export default function App() {
 

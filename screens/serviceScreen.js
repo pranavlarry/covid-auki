@@ -76,7 +76,7 @@ const ServiceScreen = (props) => {
           // Initially visible month. Default = Date()
           current={date}
           // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-          minDate={"2020-04-16"}
+          minDate={date}
           // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
           maxDate={"2020-05-30"}
           // Handler which gets executed on day press. Default = undefined

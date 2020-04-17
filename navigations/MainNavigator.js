@@ -1,11 +1,13 @@
 import { createStackNavigator} from 'react-navigation-stack';
-import {createAppContainer} from 'react-navigation';
+import {createAppContainer, createSwitchNavigator} from 'react-navigation';
 import { Platform, Text } from 'react-native';
 import { createDrawerNavigator } from 'react-navigation-drawer';
 import Homepage from '../screens/homepage';
 import ManageAppointments from '../screens/manageAppointments';
 import ServiceScreen from '../screens/serviceScreen';
 import BookingScreen from '../screens/bookingScreen';
+import AuthScreen from '../screens/AuthScreen';
+import SignUp from '../screens/signUpScreen';
 
 const MainNavigator = createStackNavigator({
     homeScreen: {
@@ -41,4 +43,18 @@ const SideNavigator = createDrawerNavigator (
     }
 )
 
-export default createAppContainer(SideNavigator);
+const AuthNavigator = createStackNavigator(
+    {
+        authScreen: AuthScreen,
+    }
+)
+
+const authNavigator = createSwitchNavigator(
+    {
+        auth: AuthNavigator,
+        signUp: SignUp,
+        home: SideNavigator
+    }
+)
+
+export default createAppContainer(authNavigator);
