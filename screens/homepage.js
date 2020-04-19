@@ -8,24 +8,24 @@ import * as Permissions from "expo-permissions";
 import HeaderButton from "../components/headerButton";
 import AllServiceCat from "../components/allServiceCategories";
 import CategoryGridTile from '../components/CategoryGridTile';
-import { CATEGORIES } from "../dummyData/categories";
 import * as SetLoc from '../store/actions/user';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import * as Business from '../store/actions/business';
 
 
 // AIzaSyAGDHLqd2GWGd3n3ia3dkwYek926FSyecI
 const Homepage = (props) => {
+  const categories = useSelector(state=> state.business.categories);
   const [search, updateSearch] = useState("");
   const [isFetching, setIsFetching] = useState(false);
-  const [filteredCat,UpdateFilteredCat] = useState(CATEGORIES);
-
+  const [filteredCat,UpdateFilteredCat] = useState("");
   const dispatch = useDispatch();
 
   const searchData=useCallback((val)=> {
     let result = [];
-    result= CATEGORIES.filter(cat => cat.title.toLowerCase().includes(val.toLowerCase()));
+    result= categories.filter(cat => cat.title.toLowerCase().includes(val.toLowerCase()));
     return result;
-  },[CATEGORIES]);
+  },[categories]);
 
   let timmer;
   const handleSearch = useCallback((enterText) => {
@@ -41,9 +41,44 @@ const Homepage = (props) => {
 
 
   useEffect(() => {
+    if(categories.length === 0) {
+      dispatch(Business.setCategories());
+    }
     // Geocoder.init("AIzaSyAGDHLqd2GWGd3n3ia3dkwYek926FSyecI", {
     //   language: "en",
     // });
+    
+//  console.log(firestore.collection("business").doc("PvrVrgTbsNPyKNZQy6o9").get());
+
+//  let business = firestore.collection('business');
+                      
+// let query = business.where('category', '==', "service laptop").get()
+//   .then(snapshot => {
+//     if (snapshot.empty) {
+//       console.log('No matching documents.');
+//       return;
+//     }  
+
+//     snapshot.forEach(doc => {
+//       console.log(doc.id, '=>', doc.data());
+//     });
+//   })
+//   .catch(err => {
+//     console.log('Error getting documents', err);
+//   });
+//   .then(snapshot => {
+//     if (snapshot.empty) {
+//       console.log('No matching documents.');
+//       return;
+//     }  
+
+//     snapshot.forEach(doc => {
+//       console.log(doc.id, '=>', doc.data());
+//     });
+//   })
+//   .catch(err => {
+//     console.log('Error getting documents', err);
+//   });
     getLocationHandler();
   }, []);
 
@@ -125,9 +160,9 @@ const Homepage = (props) => {
 
       <View>
           {
-              filteredCat.length > 0 ?
+              filteredCat.length > 0 || search === '' ?
                     <FlatList
-                    data={filteredCat}
+                    data={search !=="" ? filteredCat : categories}
                     renderItem={renderGridItem}
                     keyExtractor={(item) => item.id}
                     numColumns={3}

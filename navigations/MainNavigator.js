@@ -8,6 +8,7 @@ import ServiceScreen from '../screens/serviceScreen';
 import BookingScreen from '../screens/bookingScreen';
 import AuthScreen from '../screens/AuthScreen';
 import SignUp from '../screens/signUpScreen';
+import Loading from '../screens/loading';
 
 const MainNavigator = createStackNavigator({
     homeScreen: {
@@ -51,6 +52,7 @@ const AuthNavigator = createStackNavigator(
 
 const authNavigator = createSwitchNavigator(
     {
+        loading: Loading,
         auth: AuthNavigator,
         signUp: SignUp,
         home: SideNavigator

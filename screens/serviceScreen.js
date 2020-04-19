@@ -18,7 +18,7 @@ const ServiceScreen = (props) => {
   const [kmSelector, updateKmSelector] = useState(10);
   const [calVisible, updateCalVisible] = useState(false);
   const [invalidDate,updateInvalidDate] = useState(false);
-  const selectedBusiness = useSelector(state=> state.business);
+  const selectedBusiness = useSelector(state=> state.business.selectedBusiness);
 
   useEffect(()=>{
     let day = ''+startDate.getDate();
@@ -36,6 +36,7 @@ const ServiceScreen = (props) => {
   const checkAvailability = (day) => {
     const dateobj = new Date(day.dateString);
     const dayString = dateobj.toDateString().slice(0,3);
+    // console.log(selectedBusiness,"yoo");
     const holidays = selectedBusiness.holidays;
     if((holidays.days.filter(val => val.toLowerCase() === dayString.toLowerCase()).length > 0) || (holidays.date.filter(val => val === day.dateString).length > 0)){
         updateInvalidDate(true);

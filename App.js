@@ -5,7 +5,7 @@ import userReducer from './store/reducer/user';
 import businessReducers from './store/reducer/business';
 import { Provider } from 'react-redux';
 import ReduxThunk from 'redux-thunk';
-import * as firebase from "firebase";
+import {firestore} from './config';
 
 
 
@@ -21,7 +21,7 @@ const rootReducer = combineReducers({
 const store = createStore(rootReducer,applyMiddleware(ReduxThunk));
 
 export default function App() {
-
+  
   return (
   <Provider store={store} >      
     <MainNavigator />

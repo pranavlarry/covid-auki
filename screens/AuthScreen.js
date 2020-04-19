@@ -1,4 +1,5 @@
-import React, { useReducer, useCallback } from "react";
+import React, { useReducer, useCallback, useState } from "react";
+import { SocialIcon } from "react-native-elements";
 import {
   ScrollView,
   View,
@@ -42,7 +43,8 @@ const formReducer = (state, action) => {
 };
 
 const AuthScreen = (props) => {
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
+  const [error,updateError] = useState("")
 
   const [formState, dispatchFormState] = useReducer(formReducer, {
     inputValues: {
@@ -64,9 +66,12 @@ const AuthScreen = (props) => {
     //   )
     // );
     firebaseAuth
-    .signInWithEmailAndPassword(formState.inputValues.email, formState.inputValues.password)
-    .then(() => props.navigation.navigate("home"))
-    .catch((error) =>console.log( error.message));
+      .signInWithEmailAndPassword(
+        formState.inputValues.email,
+        formState.inputValues.password
+      )
+      .then(() => props.navigation.navigate("home"))
+      .catch((error) => updateError(error.message));
   };
 
   const inputChangeHandler = useCallback(
@@ -82,11 +87,9 @@ const AuthScreen = (props) => {
   );
 
   return (
-    <KeyboardAvoidingView
-      keyboardVerticalOffset={50}
-      style={styles.screen}
-    >
+    <KeyboardAvoidingView keyboardVerticalOffset={50} style={styles.screen}>
       <LinearGradient colors={["#ffedff", "#ffe3ff"]} style={styles.gradient}>
+        <Text>{error}</Text>
         <Card style={styles.authContainer}>
           <ScrollView>
             <Input
@@ -130,6 +133,8 @@ const AuthScreen = (props) => {
             </View>
           </ScrollView>
         </Card>
+        <SocialIcon style={{width: 200}} title="Sign In With Google" onPress={console.log("google")} button type="google" />
+        <SocialIcon style={{width: 200}} title="Sign In With Facebook" onPress={console.log("facebook")} button type="facebook" />
       </LinearGradient>
     </KeyboardAvoidingView>
   );
