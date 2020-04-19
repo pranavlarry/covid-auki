@@ -41,44 +41,13 @@ const Homepage = (props) => {
 
 
   useEffect(() => {
+    // dispatch(setUser(props.navigation.getParam("user")))
     if(categories.length === 0) {
       dispatch(Business.setCategories());
     }
     // Geocoder.init("AIzaSyAGDHLqd2GWGd3n3ia3dkwYek926FSyecI", {
     //   language: "en",
     // });
-    
-//  console.log(firestore.collection("business").doc("PvrVrgTbsNPyKNZQy6o9").get());
-
-//  let business = firestore.collection('business');
-                      
-// let query = business.where('category', '==', "service laptop").get()
-//   .then(snapshot => {
-//     if (snapshot.empty) {
-//       console.log('No matching documents.');
-//       return;
-//     }  
-
-//     snapshot.forEach(doc => {
-//       console.log(doc.id, '=>', doc.data());
-//     });
-//   })
-//   .catch(err => {
-//     console.log('Error getting documents', err);
-//   });
-//   .then(snapshot => {
-//     if (snapshot.empty) {
-//       console.log('No matching documents.');
-//       return;
-//     }  
-
-//     snapshot.forEach(doc => {
-//       console.log(doc.id, '=>', doc.data());
-//     });
-//   })
-//   .catch(err => {
-//     console.log('Error getting documents', err);
-//   });
     getLocationHandler();
   }, []);
 
@@ -110,7 +79,7 @@ const Homepage = (props) => {
     //     lat: location.coords.latitude,
     //     lng: location.coords.longitude,
     //   });
-    console.log(location)
+    // console.log(location)
       dispatch(SetLoc.setLocation({
         lat: location.coords.latitude,
         lng: location.coords.longitude,

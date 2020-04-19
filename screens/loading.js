@@ -1,13 +1,12 @@
 import React, { useEffect } from "react";
 import { ActivityIndicator, View, Text, StyleSheet } from "react-native";
-import {firebaseAuth} from "../config";
+import { firebaseAuth } from "../config";
 const Loading = (props) => {
-    useEffect(()=> {
-        firebaseAuth.onAuthStateChanged(user => {
-            console.log(user);
-            props.navigation.navigate(user ? 'home' : 'auth')
-          })
-    },[]);
+  useEffect(() => {
+    firebaseAuth.onAuthStateChanged((user) => {
+      props.navigation.navigate(user ? "home" : "auth");
+    });
+  }, []);
   return (
     <View style={styles.container}>
       <Text>Loading</Text>

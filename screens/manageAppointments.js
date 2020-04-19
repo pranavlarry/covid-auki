@@ -1,31 +1,86 @@
-import React from "react";
-import { View, Text } from "react-native";
+import React, { useEffect } from "react";
+import { Card } from "react-native-elements";
 import HeaderButton from "../components/headerButton";
 import { HeaderButtons, Item } from "react-navigation-header-buttons";
+import { useSelector, useDispatch } from "react-redux";
+import * as userAction from "../store/actions/user";
+import { ScrollView, FlatList, View, Text, Button, StyleSheet } from "react-native";
+import { firebaseAuth } from "../config";
 
 const ManageAppointments = (props) => {
+  const dispatch = useDispatch();
+  const userId = firebaseAuth.currentUser.uid;
+  const app = useSelector((state) => state.user.appointments);
+  console.log(app);
+  useEffect(() => {
+    if (app.length === 0) {
+      dispatch(userAction.setAppointments(userId));
+    }
+  }, []);
+
+  const cancel = id => {
+
+  }
+
+  const renderAppoinment = (itemData) => {
+    return (
+      <Card>
+        <Text>Booking id:{itemData.item.id}</Text>
+        <Text>Business Name:{itemData.item.businessName}</Text>
+        <View style={styles.row}>
+          <Text>Time:{itemData.item.time}</Text>
+          <Text>Date:{itemData.item.date}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text>Booking Staus:{itemData.item.bookingStatus}</Text>
+          <Text>Appointment Status:{itemData.item.appointmentStatus}</Text>
+        </View>
+        <View style={styles.row}>
+          <View>
+            <Button
+              onPress={cancel.bind(this, itemData.item.id)}
+              titile="Cancel Booking"
+            />
+          </View>
+          <View>
+            <Button onPress={()=>{}} titile="Contact" />
+          </View>
+        </View>
+      </Card>
+    );
+  };
+
   return (
-    <View>
-      <Text>Appointments Page</Text>
-    </View>
+    <FlatList
+      data={app}
+      renderItem={renderAppoinment}
+      keyExtractor={(item) => item.id}
+    />
   );
 };
 
-ManageAppointments.navigationOptions = navData => {
-    return {
-      headerTitle: "Manage Appointments",
-      headerLeft: () => (
-        <HeaderButtons HeaderButtonComponent={HeaderButton}>
-          <Item
-            title="menu"
-            iconName="ios-menu"
-            onPress={() => {
-              navData.navigation.toggleDrawer();
-            }}
-          />
-        </HeaderButtons>
-      ),
-    };
+ManageAppointments.navigationOptions = (navData) => {
+  return {
+    headerTitle: "Manage Appointments",
+    headerLeft: () => (
+      <HeaderButtons HeaderButtonComponent={HeaderButton}>
+        <Item
+          title="menu"
+          iconName="ios-menu"
+          onPress={() => {
+            navData.navigation.toggleDrawer();
+          }}
+        />
+      </HeaderButtons>
+    ),
   };
+};
 
 export default ManageAppointments;
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-around"
+  }
+})
