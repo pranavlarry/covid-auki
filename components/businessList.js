@@ -89,11 +89,11 @@ const BusinessList = (props) => {
     const filterList = [];
     // const businessList = BUSINESS[props.cid];
     businessList.forEach((val) => {
-      const lat = val.location.lat;
-      const lng = val.location.lng;
+      const lat = parseFloat(val.location.lat);
+      const lng = parseFloat(val.location.lng);
 
       if (
-        distance(location.lat, location.lng, lat, lng, "k") <= props.distance
+        distance(parseFloat(location.lat),parseFloat(location.lng), lat, lng, "k") <= props.distance
       ) {
         filterList.push(val);
       }

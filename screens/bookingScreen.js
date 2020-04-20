@@ -186,10 +186,12 @@ const BookingScreen = React.memo((props) => {
           ) {
             var newVal = slotBookingNo ? slotBookingNo + 1 : 1;
             currentBookings
-              ? transaction.set(timeSlotUpdate, {
+              ? 
+                (transaction.set(timeSlotUpdate, {
                   ...currentBookings,
                   [selectedTime]: newVal,
                 })
+                )
               : transaction.set(timeSlotUpdate, { [selectedTime]: newVal });
             transaction.set(bookingDoc, {
               businessId: selectedBussiness.id,
@@ -219,7 +221,7 @@ const BookingScreen = React.memo((props) => {
         );
         console.error(err);
       });
-  }, [firebaseAuth.currentUser, formState, selectedBussiness]);
+  }, [firebaseAuth.currentUser, formState, selectedBussiness,selectedTime]);
 
   const handleReshedule = useCallback(() => {
     const oldTime = props.navigation.getParam("time");
@@ -258,39 +260,39 @@ const BookingScreen = React.memo((props) => {
               time: selectedTime,
               date: props.navigation.getParam("date"),
             });
-            return "done";
+            return true;
           }
         });
       })
-      .then(function (status) {
-        if (status === "done") {
-          updateBookingStatus(
-            "Your Resheduling is successful check your Manage appointments section for more details."
-          );
-        }
-      })
-      .catch(function (err) {
-        updateBookingStatus(
-          "Sorry we can't process your booking now please try again later."
-        );
-        console.error(err);
-      });
-    firestore
-      .runTransaction(function (transaction) {
-        return transaction.get(oldTimeSlot).then(function (tSlot) {
-          var currentBookings = tSlot.data();
-          var slotBookingNo = currentBookings[oldTime] - 1;
-          transaction.update(oldTimeSlot, {
-            [oldTime]: slotBookingNo,
+      .then(function (res) {
+        if (res) {
+          // updateBookingStatus(
+          //   "Your Resheduling is successful check your Manage appointments section for more details."
+          // );
+          firestore
+          .runTransaction(function (transaction) {
+            return transaction.get(oldTimeSlot).then(function (tSlot) {
+              var currentBookings = tSlot.data();
+              var slotBookingNo = currentBookings[oldTime] - 1;
+              transaction.update(oldTimeSlot, {
+                [oldTime]: slotBookingNo,
+              });
+              return true;
+            });
+          })
+          .then(function (res) {
+            if (res) {
+              updateBookingStatus(
+                "Your Resheduling is successful check your Manage appointments section for more details."
+              );
+            }
+          })
+          .catch(function (err) {
+            updateBookingStatus(
+              "Sorry we can't process your booking now please try again later."
+            );
+            console.error(err);
           });
-          return "done";
-        });
-      })
-      .then(function (status) {
-        if (status === "done") {
-          updateBookingStatus(
-            "Your Resheduling is successful check your Manage appointments section for more details."
-          );
         }
       })
       .catch(function (err) {
@@ -299,7 +301,9 @@ const BookingScreen = React.memo((props) => {
         );
         console.error(err);
       });
-  }, [selectedBussiness]);
+
+
+  }, [selectedBussiness,selectedTime]);
 
   return (
     <View>

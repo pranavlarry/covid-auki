@@ -8,21 +8,13 @@ import { Calendar } from "react-native-calendars";
 import { useSelector } from "react-redux";
 import { formatDate } from "../helper/helperFunctions";
 
-let startDate = new Date();
-let changeDate = new Date();
-
 const ServiceScreen = React.memo((props) => {
-  startDate.setDate(startDate.getDate() + 1);
   const [kmSelector, updateKmSelector] = useState(10);
   const [calVisible, updateCalVisible] = useState(false);
   const [invalidDate, updateInvalidDate] = useState(false);
   const selectedBusiness = useSelector(
     (state) => state.business.selectedBusiness
   );
-
-  useEffect(() => {
-    changeDate = new Date();
-  }, [calVisible]);
 
   const checkAvailability = useCallback(
     (day) => {
@@ -74,11 +66,26 @@ const ServiceScreen = React.memo((props) => {
         <Text>Select A Date</Text>
         <Calendar
           // Initially visible month. Default = Date()
-          current={formatDate(startDate)}
+          current={
+            (()=>{
+              const current = new Date();
+              return  formatDate(current);
+            })()
+           }
           // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-          minDate={formatDate(changeDate.setDate(changeDate.getDate() + 1))}
+          minDate={
+            (()=>{
+              const minDate = new Date();
+              return  formatDate(minDate.setDate(minDate.getDate() + 1));
+            })()
+           }
           // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-          maxDate={formatDate(changeDate.setDate(changeDate.getDate() + 30))}
+          maxDate={
+            (()=> {
+              const maxDate = new Date();
+              return formatDate(maxDate.setDate(maxDate.getDate() + 30))
+            })()
+          }
           // Handler which gets executed on day press. Default = undefined
           onDayPress={(day) => {
             checkAvailability(day);
@@ -94,9 +101,16 @@ const ServiceScreen = React.memo((props) => {
             console.log("month changed", month);
           }}
           // Hide month navigation arrows. Default = false
-          hideArrows={true}
+          hideArrows={false}
           // Replace default arrows with custom ones (direction can be 'left' or 'right')
-          renderArrow={(direction) => <Arrow />}
+          renderArrow={(direction) => {
+            if(direction==='right') {
+              return (<Text>Next</Text>);
+            }
+            else if (direction === 'left')  {
+              return (<Text>Prev</Text>);
+            }
+          }}
           // Do not show days of other months in month page. Default = false
           hideExtraDays={true}
           // If hideArrows=false and hideExtraDays=false do not switch month when tapping on greyed out
@@ -105,7 +119,7 @@ const ServiceScreen = React.memo((props) => {
           // If firstDay=1 week starts from Monday. Note that dayNames and dayNamesShort should still start from Sunday.
           firstDay={1}
           // Hide day names. Default = false
-          hideDayNames={true}
+          hideDayNames={false}
           // Show week numbers to the left. Default = false
           showWeekNumbers={true}
           // Handler which gets executed when press arrow icon left. It receive a callback can go back month
@@ -113,9 +127,9 @@ const ServiceScreen = React.memo((props) => {
           // Handler which gets executed when press arrow icon right. It receive a callback can go next month
           onPressArrowRight={(addMonth) => addMonth()}
           // Disable left arrow. Default = false
-          disableArrowLeft={true}
+          disableArrowLeft={false}
           // Disable right arrow. Default = false
-          disableArrowRight={true}
+          disableArrowRight={false}
         />
         {invalidDate && (
           <Text>

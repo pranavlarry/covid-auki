@@ -13,7 +13,6 @@ import { firebaseAuth } from "../config";
 import { formatDate, callNumber } from "../helper/helperFunctions";
 
 let tDate = new Date();
-let secondDate = new Date();
 
 const ManageAppointments = React.memo((props) => {
   const dispatch = useDispatch();
@@ -30,12 +29,18 @@ const ManageAppointments = React.memo((props) => {
   });
 
   useEffect(() => {
-    dispatch(userAction.setAppointments(userId));
-  }, []);
+    const willFocus = props.navigation.addListener("willFocus", () => {
+      dispatch(userAction.setAppointments(userId));
+    });
+    console.log("hooii");
+    return () => {
+      willFocus.remove();
+    };
+  }, [dispatch, userAction.setAppointments]);
 
-  useEffect(() => {
-    secondDate = new Date();
-  }, [rescheduleDetailes.openCal]);
+  // useEffect(() => {
+  //   dispatch(userAction.setAppointments(userId));
+  // }, [dispatch]);
 
   const cancel = useCallback((id, bid, time, date) => {
     const booking = firestore.collection("userBooking").doc(id);
@@ -205,9 +210,8 @@ const ManageAppointments = React.memo((props) => {
                   onPress={() => {
                     if (itemData.item.contact) {
                       callNumber(itemData.item.contact);
-                    }
-                    else {
-                      Alert.alert('Phone number is not available');
+                    } else {
+                      Alert.alert("Phone number is not available");
                     }
                   }}
                   title="Contact"
@@ -256,11 +260,20 @@ const ManageAppointments = React.memo((props) => {
           <Text>Select A Date</Text>
           <Calendar
             // Initially visible month. Default = Date()
-            current={formatDate(tDate)}
+            current={(() => {
+              const current = new Date();
+              return formatDate(current);
+            })()}
             // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-            minDate={formatDate(secondDate.setDate(secondDate.getDate() + 1))}
+            minDate={(() => {
+              const minDate = new Date();
+              return formatDate(minDate.setDate(minDate.getDate() + 1));
+            })()}
             // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-            maxDate={formatDate(secondDate.setDate(secondDate.getDate() + 30))}
+            maxDate={(() => {
+              const maxDate = new Date();
+              return formatDate(maxDate.setDate(maxDate.getDate() + 30));
+            })()}
             // Handler which gets executed on day press. Default = undefined
             onDayPress={(day) => {
               checkAvailability(day);
@@ -276,9 +289,16 @@ const ManageAppointments = React.memo((props) => {
               console.log("month changed", month);
             }}
             // Hide month navigation arrows. Default = false
-            hideArrows={true}
+            hideArrows={false}
             // Replace default arrows with custom ones (direction can be 'left' or 'right')
-            renderArrow={(direction) => <Arrow />}
+            renderArrow={(direction) => {
+              if(direction==='right') {
+                return (<Text>Next</Text>);
+              }
+              else if (direction === 'left')  {
+                return (<Text>Prev</Text>);
+              }
+            }}
             // Do not show days of other months in month page. Default = false
             hideExtraDays={true}
             // If hideArrows=false and hideExtraDays=false do not switch month when tapping on greyed out
@@ -287,7 +307,7 @@ const ManageAppointments = React.memo((props) => {
             // If firstDay=1 week starts from Monday. Note that dayNames and dayNamesShort should still start from Sunday.
             firstDay={1}
             // Hide day names. Default = false
-            hideDayNames={true}
+            hideDayNames={false}
             // Show week numbers to the left. Default = false
             showWeekNumbers={true}
             // Handler which gets executed when press arrow icon left. It receive a callback can go back month
@@ -295,9 +315,9 @@ const ManageAppointments = React.memo((props) => {
             // Handler which gets executed when press arrow icon right. It receive a callback can go next month
             onPressArrowRight={(addMonth) => addMonth()}
             // Disable left arrow. Default = false
-            disableArrowLeft={true}
+            disableArrowLeft={false}
             // Disable right arrow. Default = false
-            disableArrowRight={true}
+            disableArrowRight={false}
           />
           {rescheduleDetailes.invalidDate && (
             <Text>
