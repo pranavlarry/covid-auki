@@ -10,7 +10,7 @@ import * as businessAction from "../store/actions/business";
 import BusinessModel from "../models/businessmodel";
 import { FlatList, View, Text, Button, StyleSheet, Alert } from "react-native";
 import { firebaseAuth } from "../config";
-import { formatDate } from "../helper/formatTime";
+import { formatDate, callNumber } from "../helper/helperFunctions";
 
 let tDate = new Date();
 let secondDate = new Date();
@@ -143,7 +143,8 @@ const ManageAppointments = React.memo((props) => {
                 resp.data().personPerSlot,
                 resp.data().holidays,
                 resp.data().timing,
-                resp.data().slotInterval
+                resp.data().slotInterval,
+                resp.data().contact
               )
             );
           });
@@ -200,7 +201,17 @@ const ManageAppointments = React.memo((props) => {
               )}
 
               <View>
-                <Button onPress={() => {}} title="Contact" />
+                <Button
+                  onPress={() => {
+                    if (itemData.item.contact) {
+                      callNumber(itemData.item.contact);
+                    }
+                    else {
+                      Alert.alert('Phone number is not available');
+                    }
+                  }}
+                  title="Contact"
+                />
               </View>
             </View>
             {itemData.item.bookingStatus === "open" && (

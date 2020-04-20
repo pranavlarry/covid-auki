@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, FlatList, StyleSheet, Button, ActivityIndicator, Text } from "react-native";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Button,
+  ActivityIndicator,
+  Text,
+  Alert
+} from "react-native";
 // import { BUSINESS } from "../dummyData/bussiness";
 import businessModel from "../models/businessmodel";
 import { Card } from "react-native-elements";
 import * as businessAction from "../store/actions/business";
 import { useSelector, useDispatch } from "react-redux";
 import { firestore } from "../config";
-
+import { callNumber } from "../helper/helperFunctions";
 const distance = (lat1, lon1, lat2, lon2, unit) => {
   if (lat1 == lat2 && lon1 == lon2) {
     return 0;
@@ -63,13 +71,13 @@ const BusinessList = (props) => {
               doc.data().personPerSlot,
               doc.data().holidays,
               doc.data().timing,
-              doc.data().slotInterval
+              doc.data().slotInterval,
+              doc.data().contact
             )
           );
         });
         updateBusinessList(list);
         updateLoadingList(false);
-
       })
       .catch((err) => {
         console.log("Error getting documents", err);
@@ -122,6 +130,13 @@ const BusinessList = (props) => {
           />
           <Button
             // icon={<Icon name='code' color='#ffffff' />}
+            onPress={() => {
+              if (itemData.item.contact) {
+                callNumber(itemData.item.contact);
+              }else {
+                Alert.alert('Phone number is not available');
+              }
+            }}
             buttonStyle={styles.btn}
             title="Contact"
           />
@@ -166,6 +181,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 10,
-    minHeight: 300
+    minHeight: 300,
   },
 });

@@ -6,7 +6,7 @@ import { Slider, Overlay } from "react-native-elements";
 import BusinessList from "../components/businessList";
 import { Calendar } from "react-native-calendars";
 import { useSelector } from "react-redux";
-import { formatDate } from "../helper/formatTime";
+import { formatDate } from "../helper/helperFunctions";
 
 let startDate = new Date();
 let changeDate = new Date();
