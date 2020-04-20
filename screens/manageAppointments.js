@@ -25,25 +25,25 @@ const ManageAppointments = (props) => {
   const renderAppoinment = (itemData) => {
     return (
       <Card>
-        <Text>Booking id:{itemData.item.id}</Text>
-        <Text>Business Name:{itemData.item.businessName}</Text>
+        <Text style={{paddingVertical: 5}}>Booking id: {itemData.item.id}</Text>
+        <Text style={{paddingVertical: 5}}>Business Name: {itemData.item.businessName}</Text>
         <View style={styles.row}>
-          <Text>Time:{itemData.item.time}</Text>
-          <Text>Date:{itemData.item.date}</Text>
+          <Text>Time: {itemData.item.time}</Text>
+          <Text>Date: {itemData.item.date}</Text>
         </View>
         <View style={styles.row}>
-          <Text>Booking Staus:{itemData.item.bookingStatus}</Text>
-          <Text>Appointment Status:{itemData.item.appointmentStatus}</Text>
+          <Text>Booking Staus: {itemData.item.bookingStatus}</Text>
+          <Text>Appointment Status: {itemData.item.appointmentStatus}</Text>
         </View>
         <View style={styles.row}>
           <View>
             <Button
               onPress={cancel.bind(this, itemData.item.id)}
-              titile="Cancel Booking"
+              title="Cancel Booking"
             />
           </View>
           <View>
-            <Button onPress={()=>{}} titile="Contact" />
+            <Button onPress={()=>{}} title="Contact" />
           </View>
         </View>
       </Card>
@@ -81,6 +81,8 @@ export default ManageAppointments;
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    justifyContent: "space-around"
+    justifyContent: "space-between",
+    paddingVertical: 5
   }
+  
 })

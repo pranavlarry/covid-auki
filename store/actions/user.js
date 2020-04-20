@@ -14,22 +14,31 @@ export const setAppointments = (userId) => {
     try {
       const bookings = firestore.collection("userBooking");
       const query = bookings.where("userId", "==", userId).get();
-      const data = (await query).data();
-      console.log(data,"hoii");
-      for (let id in data) {
+
+      (await query).forEach((doc) => {
+        const data = doc.data();
+        // console.log(,doc.id);
         app.push(
           new Booking(
-            query.id(),
-            data[id].bookingStatus,
-            data[id].appointmentStatus,
-            data[id].date,
-            data[id].time,
-            data[id].bName
+            doc.id,
+            data.bookingStatus,
+            data.appointmentStatus,
+            data.date,
+            data.time,
+            data.bName
           )
         );
-      }
-    dispatch({type:SET_APPOINTMENTS,app});
+        // console.log(app);
+      });
 
+      console.log(app);
+
+      //   const data = (await query).data();
+      //   console.log(data,"hoii");
+      //   for (let id in data) {
+
+      //   }
+      dispatch({ type: SET_APPOINTMENTS, app });
     } catch (err) {
       console.log(error);
     }
@@ -38,5 +47,5 @@ export const setAppointments = (userId) => {
 };
 
 export const setUser = (user) => {
-    return {type: SET_USER_DETAILS,user}
-}
+  return { type: SET_USER_DETAILS, user };
+};
