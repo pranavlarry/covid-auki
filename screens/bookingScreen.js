@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Button } from "react-native";
 import { useSelector } from "react-redux";
 import Input from "../components/Input";
 import { Overlay } from "react-native-elements";
-import { firestore,firebaseAuth } from "../config";
+import { firebase, firestore, firebaseAuth } from "../config";
 const FORM_INPUT_UPDATE = "FORM_INPUT_UPDATE";
 
 const formReducer = (state, action) => {
@@ -77,6 +77,7 @@ const getSlots = (startTime, endTime, slot) => {
 };
 
 const BookingScreen = (props) => {
+  const isReshedule = props.navigation.getParam("reschedule");
   const [bookingStatus, updateBookingStatus] = useState("");
   const [bookingModal, updateBookingModal] = useState(false);
 
@@ -93,11 +94,11 @@ const BookingScreen = (props) => {
   const checkTimeStot = (bookedSlots, timeSlots) => {
     let formatedTimeSlots = [];
     const personPerSlot = selectedBussiness.personsPerSlot;
+    console.log(selectedBussiness);
     timeSlots.forEach((element) => {
-      console.log(bookedSlots[element], selectedBussiness);
       if (
         bookedSlots[element] === undefined ||
-        bookedSlots[element] < personPerSlot
+        bookedSlots[element] < personPerSlot || bookedSlots[element] === NaN
       ) {
         formatedTimeSlots.push(element);
       }
@@ -127,6 +128,7 @@ const BookingScreen = (props) => {
       .doc(props.navigation.getParam("date"))
       .get()
       .then((res) => {
+        console.log(res.data());
         if (res.empty || res.data() === undefined) {
           updateCheckedtimeslots(timeSlots);
         } else {
@@ -160,13 +162,22 @@ const BookingScreen = (props) => {
       .runTransaction(function (transaction) {
         return transaction.get(timeSlotUpdate).then(function (tSlot) {
           var currentBookings = tSlot.data();
-          var slotBookingNo = currentBookings[selectedTime];
+          try {
+            var slotBookingNo = currentBookings[selectedTime];
+          } catch {
+            var slotBookingNo = undefined;
+          }
           if (
             slotBookingNo < selectedBussiness.personsPerSlot ||
             slotBookingNo == undefined
           ) {
             var newVal = slotBookingNo ? slotBookingNo + 1 : 1;
-            transaction.update(timeSlotUpdate, { [selectedTime]: newVal });
+            currentBookings
+              ? transaction.set(timeSlotUpdate, {
+                  ...currentBookings,
+                  [selectedTime]: newVal,
+                })
+              : transaction.set(timeSlotUpdate, { [selectedTime]: newVal });
             transaction.set(bookingDoc, {
               businessId: selectedBussiness.id,
               userId: user.uid,
@@ -195,27 +206,90 @@ const BookingScreen = (props) => {
         );
         console.error(err);
       });
+  };
 
-    // firestore.collection("userBooking").doc().set({
-    //   businessId: selectedBussiness.id,
-    //   userId: "BG1WxJVM5bY7GpSizaZvIu9L9Bi2",
-    //   username: "Pranav Lari",
-    //   email: "pranavlarry111@gmail.com",
-    //   time: selectedTime,
-    //   bookingStatus: "open",
-    //   appointmentStatus: "walk-in",
-    //   date: props.navigation.getParam("date"),
-    //   purpose: formState.inputValues.purpose
-    // })
-    // .then((res)=>{
-    //   console.log(res);
-    // })
-    // .catch(err=> console.log(err))
+  const handleReshedule = () => {
+    const oldTime = props.navigation.getParam("time");
+    updateBookingStatus("Please Wait Your Reschedule is being processed.");
+    updateBookingModal(true);
+    const bookingDoc = firestore
+      .collection("userBooking")
+      .doc(props.navigation.getParam("id"));
+    const timeSlotUpdate = firestore
+      .collection(`timeSlots/${selectedBussiness.id}/bookings`)
+      .doc(props.navigation.getParam("date"));
+    const oldTimeSlot = firestore
+      .collection(`timeSlots/${selectedBussiness.id}/bookings`)
+      .doc(props.navigation.getParam("oldDate"));
+    firestore
+      .runTransaction(function (transaction) {
+        return transaction.get(timeSlotUpdate).then(function (tSlot) {
+          var currentBookings = tSlot.data();
+          try {
+            var slotBookingNo = currentBookings[selectedTime];
+          } catch {
+            var slotBookingNo = undefined;
+          }
+          if (
+            slotBookingNo < selectedBussiness.personsPerSlot ||
+            slotBookingNo == undefined
+          ) {
+            var newVal = slotBookingNo ? slotBookingNo + 1 : 1;
+            currentBookings
+              ? transaction.set(timeSlotUpdate, {
+                  ...currentBookings,
+                  [selectedTime]: newVal,
+                })
+              : transaction.set(timeSlotUpdate, { [selectedTime]: newVal });
+            transaction.update(bookingDoc, {
+              time: selectedTime,
+              date: props.navigation.getParam("date"),
+            });
+            return "done";
+          }
+        });
+      })
+      .then(function (status) {
+        if (status === "done") {
+          updateBookingStatus(
+            "Your Resheduling is successful check your Manage appointments section for more details."
+          );
+        }
+      })
+      .catch(function (err) {
+        updateBookingStatus(
+          "Sorry we can't process your booking now please try again later."
+        );
+        console.error(err);
+      });
+      firestore
+      .runTransaction(function (transaction) {
+        return transaction.get(oldTimeSlot).then(function (tSlot) {
+          var currentBookings = tSlot.data();
+          var slotBookingNo = currentBookings[oldTime] - 1;
+          transaction.update(oldTimeSlot, {
+            [oldTime]: slotBookingNo,
+          });
+          return "done"
+        })
+      }).then(function (status) {
+        if (status === "done") {
+          updateBookingStatus(
+            "Your Resheduling is successful check your Manage appointments section for more details."
+          );
+        }
+      })
+      .catch(function (err) {
+        updateBookingStatus(
+          "Sorry we can't process your booking now please try again later."
+        );
+        console.error(err);
+      });
   };
 
   return (
     <View>
-      <Overlay isVisible={true}>
+      <Overlay isVisible={bookingModal}>
         <View style={styles.bookingStatus}>
           <Text style={styles.bookingText}>{bookingStatus}</Text>
           <View>
@@ -270,18 +344,22 @@ const BookingScreen = (props) => {
             </View>
           );
         })}
-
-        <Input
-          id="purpose"
-          label="Purpose of visit"
-          required
-          minLength={5}
-          errorText="Please enter a valid value."
-          onInputChange={inputChangeHandler}
-          initialValue=""
-        />
+        {!isReshedule && (
+          <Input
+            id="purpose"
+            label="Purpose of visit"
+            required
+            minLength={5}
+            errorText="Please enter a valid value."
+            onInputChange={inputChangeHandler}
+            initialValue=""
+          />
+        )}
         <View style={styles.bookBtn}>
-          <Button title="Confirm Booking" onPress={handleBooking} />
+          <Button
+            title="Confirm Booking"
+            onPress={isReshedule ? handleReshedule : handleBooking}
+          />
         </View>
       </View>
     </View>

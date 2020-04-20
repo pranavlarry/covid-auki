@@ -38,7 +38,8 @@ const ServiceScreen = (props) => {
     const dayString = dateobj.toDateString().slice(0,3);
     // console.log(selectedBusiness,"yoo");
     const holidays = selectedBusiness.holidays;
-    if((holidays.days.filter(val => val.toLowerCase() === dayString.toLowerCase()).length > 0) || (holidays.date.filter(val => val === day.dateString).length > 0)){
+    console.log(holidays);
+    if(holidays != undefined && ((holidays.days.filter(val => val.toLowerCase() === dayString.toLowerCase()).length > 0) || (holidays.date.filter(val => val === day.dateString).length > 0))){
         updateInvalidDate(true);
     }
     else {
@@ -47,7 +48,8 @@ const ServiceScreen = (props) => {
         props.navigation.navigate({
             routeName: 'bookingScreen',
             params: {
-                date: day.dateString
+                date: day.dateString,
+                reschedule: false
             }
         });
     } 

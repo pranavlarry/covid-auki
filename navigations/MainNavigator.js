@@ -28,12 +28,19 @@ const MainNavigator = createStackNavigator({
   manage: {
     screen: ManageAppointments,
   },
+},{
+  initialRouteName: "homeScreen"
 });
 
 const AppointmentsNavigator = createStackNavigator({
   manage: {
     screen: ManageAppointments,
   },
+  bookingScreen: {
+    screen: BookingScreen,
+  },
+},{
+  initialRouteName: 'manage'
 });
 const SideNavigator = createDrawerNavigator(
   {
