@@ -6,13 +6,14 @@ import { Slider, Overlay } from "react-native-elements";
 import BusinessList from "../components/businessList";
 import { Calendar } from "react-native-calendars";
 import { useSelector } from 'react-redux';
+import {formatDate} from "../helper/formatTime";
 
-
-
-const startDate = new Date();
+let startDate = new Date();
+let changeDate = new Date();
 
 
 const ServiceScreen = (props) => {
+
   startDate.setDate(startDate.getDate() + 1);
   let date=null;
   const [kmSelector, updateKmSelector] = useState(10);
@@ -20,18 +21,10 @@ const ServiceScreen = (props) => {
   const [invalidDate,updateInvalidDate] = useState(false);
   const selectedBusiness = useSelector(state=> state.business.selectedBusiness);
 
-  useEffect(()=>{
-    let day = ''+startDate.getDate();
-    let mon = ''+startDate.getMonth();
-    let year = startDate.getFullYear();
-    if(day<10){
-        day = '0'+day;
-    }
-    if(mon < 10){
-        mon='0'+mon
-    }
-    date=year+"-"+mon+"-"+day;
-  },[])
+  useEffect(()=> {
+    startDate = new Date();
+    changeDate= new Date();
+  },[calVisible])
 
   const checkAvailability = (day) => {
     const dateobj = new Date(day.dateString);
@@ -77,11 +70,11 @@ const ServiceScreen = (props) => {
         <Text>Select A Date</Text>
         <Calendar
           // Initially visible month. Default = Date()
-          current={date}
+          current={formatDate(startDate)}
           // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-          minDate={date}
+          minDate={formatDate(changeDate.setDate(changeDate.getDate()+1))}
           // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-          maxDate={"2020-05-30"}
+          maxDate={formatDate(changeDate.setDate(changeDate.getDate()+30))}
           // Handler which gets executed on day press. Default = undefined
           onDayPress={(day) => {
             checkAvailability(day);

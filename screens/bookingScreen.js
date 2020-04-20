@@ -297,9 +297,7 @@ const BookingScreen = (props) => {
               style={styles.bookingCpmBtn}
               onPress={() => {
                 updateBookingModal(false);
-                props.navigation.navigate({
-                  routeName: "homeScreen",
-                });
+                props.navigation.popToTop()
               }}
               title="Go Back Home"
             />

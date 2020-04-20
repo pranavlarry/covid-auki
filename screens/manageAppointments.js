@@ -8,36 +8,69 @@ import { Calendar } from "react-native-calendars";
 import { firestore } from "../config";
 import * as businessAction from "../store/actions/business";
 import BusinessModel from "../models/businessmodel";
-
-import { FlatList, View, Text, Button, StyleSheet } from "react-native";
+import { FlatList, View, Text, Button, StyleSheet, Alert } from "react-native";
 import { firebaseAuth } from "../config";
+import {formatDate} from "../helper/formatTime";
 
-const formatDate = () => {
-  var d = new Date(),
-    month = "" + (d.getMonth() + 1),
-    day = "" + d.getDate(),
-    year = d.getFullYear();
 
-  if (month.length < 2) month = "0" + month;
-  if (day.length < 2) day = "0" + day;
-
-  return [year, month, day].join("-");
-};
+let tDate = new Date();
+let secondDate = new Date()
 
 const ManageAppointments = (props) => {
   const dispatch = useDispatch();
   const userId = firebaseAuth.currentUser.uid;
   const app = useSelector((state) => state.user.appointments);
   const [selectedBusiness, updateSelectedBusiness] = useState({});
+  const [cancelStatus,updateCancelStatus] = useState({openStatus:false,status});
   const [rescheduleDetailes, updateRescheduleDetailes] = useState({
     openCal: false,
     invalidDate: false,
   });
+
+
   useEffect(() => {
     dispatch(userAction.setAppointments(userId));
   }, []);
 
-  const cancel = (id) => {};
+  useEffect(()=> {
+    tDate = new Date();
+    secondDate= new Date();
+  },[rescheduleDetailes.openCal])
+
+
+  const cancel = (id,bid,time,date) => {
+    const booking = firestore.collection("userBooking").doc(id);
+    const timeSlot = fireStore.collection(`timeSlots/${bid}/bookings`).doc(date);
+    updateCancelStatus({openStatus:true ,status:  "Please wait while we check you status"})
+    firestore.runTransaction(function(transaction) {
+      return transaction.get(timeSlot).then(function(tslot) {
+        const currentDatas = tslot.data();
+        const currentValue = currentDatas[time] - 1;
+        transaction.update(timeSlot,{
+          [time]: currentValue
+        });
+        transaction.update(booking,{
+          bookingStatus: "canceled"
+        });
+        return "done";
+      })
+    }).then ((status)=> {
+      if(status === "done") {
+        updateCancelStatus((ps)=>({...ps,status:"Your Booking is canceled"}))
+
+      }
+      else {
+        updateCancelStatus((ps)=>({...ps,status:"Sorry were unable to process your request please directly contact the business agents if it is urgent"}));
+      }
+
+    }).catch ((err) => {
+      updateCancelStatus("Sorry were unable to process your request please directly contact the business agents if it is urgent");
+    })
+
+  };
+
+
+
 
   const checkAvailability = (day) => {
     const dateobj = new Date(day.dateString);
@@ -69,39 +102,58 @@ const ManageAppointments = (props) => {
           oldDate: rescheduleDetailes.date,
           time: rescheduleDetailes.time,
           reschedule: true,
-          id: rescheduleDetailes.id
+          id: rescheduleDetailes.id,
         },
       });
     }
   };
 
-  const reschedule = (bookingId,id, time, date) => {
-    console.log(id);
-    updateRescheduleDetailes({
-      time: time,
-      date: date,
-      id: bookingId,
-      openCal: true,
-      invalidDate: false,
-    });
-    firestore
-      .collection("serviceCategory")
-      .doc(id)
-      .get()
-      .then((resp) => {
-        //handle error
-        updateSelectedBusiness(
-          new BusinessModel(
-            resp.id,
-            resp.data().name,
-            resp.data().location,
-            resp.data().personPerSlot,
-            resp.data().holidays,
-            resp.data().timing,
-            resp.data().slotInterval
-          )
-        );
+
+
+  const reschedule = (bookingId, id, time, date) => {
+    if(date !== formatDate(tDate)) {
+      updateRescheduleDetailes({
+        time: time,
+        date: date,
+        id: bookingId,
+        openCal: true,
+        invalidDate: false,
       });
+      firestore
+        .collection("serviceCategory")
+        .doc(id)
+        .get()
+        .then((resp) => {
+          //handle error
+          updateSelectedBusiness(
+            new BusinessModel(
+              resp.id,
+              resp.data().name,
+              resp.data().location,
+              resp.data().personPerSlot,
+              resp.data().holidays,
+              resp.data().timing,
+              resp.data().slotInterval
+            )
+          );
+        });
+    }
+    else {
+      Alert.alert(
+        "Cannot Reschedule",
+        "Your appointment is today we can only reschedule 24 hours prior contact the business agent for more details",
+        [
+          {
+            text: "Close",
+            onPress: () => {
+              return null;
+            },
+          }
+        ],
+        { cancelable: false }
+      )
+    }
+
   };
 
   const renderAppoinment = (itemData) => {
@@ -125,7 +177,13 @@ const ManageAppointments = (props) => {
           {itemData.item.bookingStatus === "open" && (
             <View>
               <Button
-                onPress={cancel.bind(this, itemData.item.id)}
+                onPress={cancel.bind(
+                  this,
+                  itemData.item.id,
+                  itemData.item.businessId,
+                  itemData.item.time,
+                  itemData.item.date
+                )}
                 title="Cancel Booking"
               />
             </View>
@@ -153,6 +211,10 @@ const ManageAppointments = (props) => {
 
   return (
     <React.Fragment>
+      <Overlay isVisible={cancelStatus.openStatus}>
+        <Text>{cancelStatus.status}</Text>
+        <Button title="Close" onPress={updateCancelStatus({openStatus:false})}/>
+      </Overlay>
       <FlatList
         data={app}
         renderItem={renderAppoinment}
@@ -162,11 +224,11 @@ const ManageAppointments = (props) => {
         <Text>Select A Date</Text>
         <Calendar
           // Initially visible month. Default = Date()
-          current={rescheduleDetailes.date}
+          current={formatDate(tDate)}
           // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-          minDate={rescheduleDetailes.date}
+          minDate={formatDate(secondDate.setDate(secondDate.getDate()+1))}
           // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-          maxDate={"2020-05-30"}
+          maxDate={formatDate(secondDate.setDate(secondDate.getDate()+1))}
           // Handler which gets executed on day press. Default = undefined
           onDayPress={(day) => {
             checkAvailability(day);
