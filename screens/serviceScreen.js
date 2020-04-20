@@ -1,58 +1,61 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, Button, StyleSheet } from "react-native";
 import HeaderButton from "../components/headerButton";
 import { HeaderButtons, Item } from "react-navigation-header-buttons";
 import { Slider, Overlay } from "react-native-elements";
 import BusinessList from "../components/businessList";
 import { Calendar } from "react-native-calendars";
-import { useSelector } from 'react-redux';
-import {formatDate} from "../helper/formatTime";
+import { useSelector } from "react-redux";
+import { formatDate } from "../helper/formatTime";
 
 let startDate = new Date();
 let changeDate = new Date();
 
-
-const ServiceScreen = (props) => {
-
+const ServiceScreen = React.memo((props) => {
   startDate.setDate(startDate.getDate() + 1);
-  let date=null;
   const [kmSelector, updateKmSelector] = useState(10);
   const [calVisible, updateCalVisible] = useState(false);
-  const [invalidDate,updateInvalidDate] = useState(false);
-  const selectedBusiness = useSelector(state=> state.business.selectedBusiness);
+  const [invalidDate, updateInvalidDate] = useState(false);
+  const selectedBusiness = useSelector(
+    (state) => state.business.selectedBusiness
+  );
 
-  useEffect(()=> {
-    startDate = new Date();
-    changeDate= new Date();
-  },[calVisible])
+  useEffect(() => {
+    changeDate = new Date();
+  }, [calVisible]);
 
-  const checkAvailability = (day) => {
-    const dateobj = new Date(day.dateString);
-    const dayString = dateobj.toDateString().slice(0,3);
-    // console.log(selectedBusiness,"yoo");
-    const holidays = selectedBusiness.holidays;
-    console.log(holidays);
-    if(holidays != undefined && ((holidays.days.filter(val => val.toLowerCase() === dayString.toLowerCase()).length > 0) || (holidays.date.filter(val => val === day.dateString).length > 0))){
+  const checkAvailability = useCallback(
+    (day) => {
+      const dateobj = new Date(day.dateString);
+      const dayString = dateobj.toDateString().slice(0, 3);
+      const holidays = selectedBusiness.holidays;
+      if (
+        holidays != undefined &&
+        (holidays.days.filter(
+          (val) => val.toLowerCase() === dayString.toLowerCase()
+        ).length > 0 ||
+          holidays.date.filter((val) => val === day.dateString).length > 0)
+      ) {
         updateInvalidDate(true);
-    }
-    else {
+      } else {
         updateInvalidDate(false);
         updateCalVisible(false);
         props.navigation.navigate({
-            routeName: 'bookingScreen',
-            params: {
-                date: day.dateString,
-                reschedule: false
-            }
+          routeName: "bookingScreen",
+          params: {
+            date: day.dateString,
+            reschedule: false,
+          },
         });
-    } 
-  }
-//   
-//   const date = '' + startDate.getDate() < 10 ?   
+      }
+    },
+    [selectedBusiness]
+  );
+
   return (
     <View>
       <View style={styles.kmContainer}>
-        <Text style={styles.kmTitle}>Sreach with in: {kmSelector} KM</Text>
+        <Text style={styles.kmTitle}>Search with in: {kmSelector} KM</Text>
         <Slider
           value={kmSelector}
           onValueChange={(value) => updateKmSelector(value)}
@@ -67,14 +70,15 @@ const ServiceScreen = (props) => {
         cid={props.navigation.getParam("categoryId")}
       />
       <Overlay isVisible={calVisible}>
+        <React.Fragment>
         <Text>Select A Date</Text>
         <Calendar
           // Initially visible month. Default = Date()
           current={formatDate(startDate)}
           // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-          minDate={formatDate(changeDate.setDate(changeDate.getDate()+1))}
+          minDate={formatDate(changeDate.setDate(changeDate.getDate() + 1))}
           // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-          maxDate={formatDate(changeDate.setDate(changeDate.getDate()+30))}
+          maxDate={formatDate(changeDate.setDate(changeDate.getDate() + 30))}
           // Handler which gets executed on day press. Default = undefined
           onDayPress={(day) => {
             checkAvailability(day);
@@ -113,15 +117,24 @@ const ServiceScreen = (props) => {
           // Disable right arrow. Default = false
           disableArrowRight={true}
         />
-        {invalidDate && <Text>Sorry the date you have selected is a holiday please select an new date</Text>}
-        <Button title="Close" onPress={()=> {
-                updateInvalidDate(false);
-                updateCalVisible(false);
-            }}/>
+        {invalidDate && (
+          <Text>
+            Sorry the date you have selected is a holiday please select an new
+            date
+          </Text>
+        )}
+        <Button
+          title="Close"
+          onPress={() => {
+            updateInvalidDate(false);
+            updateCalVisible(false);
+          }}
+        />
+        </React.Fragment>
       </Overlay>
     </View>
   );
-};
+});
 
 ServiceScreen.navigationOptions = (navData) => {
   return {

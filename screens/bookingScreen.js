@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useCallback, useReducer } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Button,
+  ActivityIndicator,
+} from "react-native";
 import { useSelector } from "react-redux";
 import Input from "../components/Input";
 import { Overlay } from "react-native-elements";
-import { firebase, firestore, firebaseAuth } from "../config";
+import { firestore, firebaseAuth } from "../config";
 const FORM_INPUT_UPDATE = "FORM_INPUT_UPDATE";
 
 const formReducer = (state, action) => {
@@ -76,7 +82,7 @@ const getSlots = (startTime, endTime, slot) => {
   return finalSlots;
 };
 
-const BookingScreen = (props) => {
+const BookingScreen = React.memo((props) => {
   const isReshedule = props.navigation.getParam("reschedule");
   const [bookingStatus, updateBookingStatus] = useState("");
   const [bookingModal, updateBookingModal] = useState(false);
@@ -91,23 +97,28 @@ const BookingScreen = (props) => {
     formIsValid: false,
   });
 
-  const checkTimeStot = (bookedSlots, timeSlots) => {
-    let formatedTimeSlots = [];
-    const personPerSlot = selectedBussiness.personsPerSlot;
-    console.log(selectedBussiness);
-    timeSlots.forEach((element) => {
-      if (
-        bookedSlots[element] === undefined ||
-        bookedSlots[element] < personPerSlot || bookedSlots[element] === NaN
-      ) {
-        formatedTimeSlots.push(element);
-      }
-    });
-    return formatedTimeSlots;
-  };
+  const checkTimeStot = useCallback(
+    (bookedSlots, timeSlots) => {
+      let formatedTimeSlots = [];
+      const personPerSlot = selectedBussiness.personsPerSlot;
+      timeSlots.forEach((element) => {
+        if (
+          bookedSlots[element] === undefined ||
+          bookedSlots[element] < personPerSlot ||
+          bookedSlots[element] === NaN
+        ) {
+          formatedTimeSlots.push(element);
+        }
+      });
+      return formatedTimeSlots;
+    },
+    [selectedBussiness]
+  );
+
   const selectedBussiness = useSelector(
     (state) => state.business.selectedBusiness
   );
+
   const [timeSlots, updateTimeSlots] = useState(
     getSlots(
       selectedBussiness.timing.startTime,
@@ -115,25 +126,27 @@ const BookingScreen = (props) => {
       selectedBussiness.slotInterval
     )
   );
+  const [loadingTime, updateLoadingTime] = useState(false);
   const [checkedtimeslots, updateCheckedtimeslots] = useState([]);
   const [selectedTime, updateSelectedTime] = useState("");
-  const handlePress = (time) => {
+
+  const handlePress = useCallback((time) => {
     updateSelectedTime(time);
-    console.log(selectedTime);
-  };
+  }, []);
 
   useEffect(() => {
+    updateLoadingTime(true);
     firestore
       .collection(`timeSlots/${selectedBussiness.id}/bookings`)
       .doc(props.navigation.getParam("date"))
       .get()
       .then((res) => {
-        console.log(res.data());
         if (res.empty || res.data() === undefined) {
           updateCheckedtimeslots(timeSlots);
         } else {
           updateCheckedtimeslots(checkTimeStot(res.data(), timeSlots));
         }
+        updateLoadingTime(false);
       })
       .catch((err) => console.log(err));
   }, [timeSlots]);
@@ -150,7 +163,7 @@ const BookingScreen = (props) => {
     [dispatchFormState]
   );
 
-  const handleBooking = () => {
+  const handleBooking = useCallback(() => {
     const user = firebaseAuth.currentUser;
     updateBookingStatus("Please Wait Your Booking Is Being Processed.");
     updateBookingModal(true);
@@ -206,9 +219,9 @@ const BookingScreen = (props) => {
         );
         console.error(err);
       });
-  };
+  }, [firebaseAuth.currentUser, formState, selectedBussiness]);
 
-  const handleReshedule = () => {
+  const handleReshedule = useCallback(() => {
     const oldTime = props.navigation.getParam("time");
     updateBookingStatus("Please Wait Your Reschedule is being processed.");
     updateBookingModal(true);
@@ -262,7 +275,7 @@ const BookingScreen = (props) => {
         );
         console.error(err);
       });
-      firestore
+    firestore
       .runTransaction(function (transaction) {
         return transaction.get(oldTimeSlot).then(function (tSlot) {
           var currentBookings = tSlot.data();
@@ -270,9 +283,10 @@ const BookingScreen = (props) => {
           transaction.update(oldTimeSlot, {
             [oldTime]: slotBookingNo,
           });
-          return "done"
-        })
-      }).then(function (status) {
+          return "done";
+        });
+      })
+      .then(function (status) {
         if (status === "done") {
           updateBookingStatus(
             "Your Resheduling is successful check your Manage appointments section for more details."
@@ -285,7 +299,7 @@ const BookingScreen = (props) => {
         );
         console.error(err);
       });
-  };
+  }, [selectedBussiness]);
 
   return (
     <View>
@@ -297,7 +311,7 @@ const BookingScreen = (props) => {
               style={styles.bookingCpmBtn}
               onPress={() => {
                 updateBookingModal(false);
-                props.navigation.popToTop()
+                props.navigation.popToTop();
               }}
               title="Go Back Home"
             />
@@ -316,53 +330,59 @@ const BookingScreen = (props) => {
           </View>
         </View>
       </Overlay>
-      <Text>
-        Select a time slot for an appointment in {selectedBussiness.name}
-      </Text>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          flexWrap: "wrap",
-        }}
-      >
-        {checkedtimeslots.map((elem, index) => {
-          const color = selectedTime === elem.time ? "blue" : "#3492e3";
-          return (
-            <View key={index} style={styles.timeSlots}>
+      {loadingTime ? (
+        <View style={styles.lcontainer}>
+          <Text>Loading Available Time Slots</Text>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : (
+        <React.Fragment>
+          <Text>
+            Select a time slot for an appointment in {selectedBussiness.name}
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-around",
+              flexWrap: "wrap",
+            }}
+          >
+            {checkedtimeslots.map((elem, index) => {
+              const color = selectedTime === elem ? "blue" : "#3492e3";
+              return (
+                <View key={index} style={styles.timeSlots}>
+                  <Button
+                    color={color}
+                    title={elem}
+                    disabled={elem.disable}
+                    onPress={handlePress.bind(this, elem)}
+                  />
+                </View>
+              );
+            })}
+            {!isReshedule && (
+              <Input
+                id="purpose"
+                label="Purpose of visit"
+                required
+                minLength={5}
+                errorText="Please enter a valid value."
+                onInputChange={inputChangeHandler}
+                initialValue=""
+              />
+            )}
+            <View style={styles.bookBtn}>
               <Button
-                color={color}
-                style={
-                  selectedTime === elem ? styles.notSelected : styles.selected
-                }
-                title={elem}
-                disabled={elem.disable}
-                onPress={handlePress.bind(this, elem)}
+                title="Confirm Booking"
+                onPress={isReshedule ? handleReshedule : handleBooking}
               />
             </View>
-          );
-        })}
-        {!isReshedule && (
-          <Input
-            id="purpose"
-            label="Purpose of visit"
-            required
-            minLength={5}
-            errorText="Please enter a valid value."
-            onInputChange={inputChangeHandler}
-            initialValue=""
-          />
-        )}
-        <View style={styles.bookBtn}>
-          <Button
-            title="Confirm Booking"
-            onPress={isReshedule ? handleReshedule : handleBooking}
-          />
-        </View>
-      </View>
+          </View>
+        </React.Fragment>
+      )}
     </View>
   );
-};
+});
 
 export default BookingScreen;
 
@@ -388,4 +408,13 @@ const styles = StyleSheet.create({
   bookingCpmBtn: {
     paddingVertical: 20,
   },
+  lcontainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+    minHeight: 300,
+  },
+
 });

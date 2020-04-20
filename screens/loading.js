@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { ActivityIndicator, View, Text, StyleSheet } from "react-native";
 import { firebaseAuth } from "../config";
-const Loading = (props) => {
+const Loading = React.memo((props) => {
   useEffect(() => {
     firebaseAuth.onAuthStateChanged((user) => {
       props.navigation.navigate(user ? "home" : "auth");
@@ -13,7 +13,7 @@ const Loading = (props) => {
       <ActivityIndicator size="large" />
     </View>
   );
-};
+});
 const styles = StyleSheet.create({
   container: {
     flex: 1,

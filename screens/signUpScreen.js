@@ -9,7 +9,6 @@ import {
   TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useDispatch } from "react-redux";
 
 import Input from "../components/Input";
 import Card from "../components/Card";
@@ -40,11 +39,12 @@ const formReducer = (state, action) => {
   return state;
 };
 
-const SignUp = (props) => {
-  // const dispatch = useDispatch();
+const SignUp = React.memo((props) => {
   const [error, updateError] = useState("");
   const [formState, dispatchFormState] = useReducer(formReducer, {
     inputValues: {
+      name: "",
+      phone: "",
       email: "",
       password: "",
       confirmPass: "",
@@ -56,13 +56,7 @@ const SignUp = (props) => {
     formIsValid: false,
   });
 
-  const signupHandler = () => {
-    // dispatch(
-    //   authActions.signup(
-    //     formState.inputValues.email,
-    //     formState.inputValues.password
-    //   )
-    // );
+  const signupHandler = useCallback(() => {
     if (formState.inputValues.password !== formState.inputValues.confirmPass) {
       updateError("Passwords don't match try again");
     } else {
@@ -71,10 +65,15 @@ const SignUp = (props) => {
           formState.inputValues.email,
           formState.inputValues.password
         )
-        .then(() => props.navigation.navigate("home"))
+        .then((result) => {
+          result.user.updateProfile({
+            displayName: formState.inputValues.name,
+            phoneNumber: formState.inputValues.phone,
+          });
+        })
         .catch((error) => updateError(error.message));
     }
-  };
+  }, [formState]);
 
   const inputChangeHandler = useCallback(
     (inputIdentifier, inputValue, inputValidity) => {
@@ -94,6 +93,29 @@ const SignUp = (props) => {
         <Text>{error}</Text>
         <Card style={styles.authContainer}>
           <ScrollView>
+            <Input
+              id="name"
+              label="Your Full Name"
+              required
+              keyboardType="default"
+              autoCapitalize="words"
+              errorText="Please enter your name"
+              onInputChange={inputChangeHandler}
+              initialValue=""
+            />
+            <Input
+              id="phone"
+              label="Your Full Phone No"
+              required
+              keyboardType="number-pad"
+              minLength={10}
+              maxLength={10}
+              onlyNum
+              autoCapitalize="none"
+              errorText="Please enter a valid Phone No"
+              onInputChange={inputChangeHandler}
+              initialValue=""
+            />
             <Input
               id="email"
               label="E-Mail"
@@ -119,7 +141,6 @@ const SignUp = (props) => {
             />
             <Text
               style={{
-                // fontFamily: 'open-sans-bold',
                 marginVertical: 8,
               }}
             >
@@ -137,15 +158,10 @@ const SignUp = (props) => {
               }
             />
             <View style={styles.buttonContainer}>
-              <Button
-                title="Sign Up"
-                // color={Colors.accent}
-                onPress={signupHandler}
-              />
+              <Button title="Sign Up" onPress={signupHandler} />
               <View style={styles.buttonContainer}>
                 <Button
                   title="Go to Login"
-                  // color={Colors.primary}
                   onPress={() => {
                     props.navigation.navigate("auth");
                   }}
@@ -157,7 +173,7 @@ const SignUp = (props) => {
       </LinearGradient>
     </KeyboardAvoidingView>
   );
-};
+});
 
 SignUp.navigationOptions = {
   headerTitle: "Sign Up",

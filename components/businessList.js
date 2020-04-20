@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, FlatList, StyleSheet, Button } from "react-native";
+import { View, FlatList, StyleSheet, Button, ActivityIndicator, Text } from "react-native";
 // import { BUSINESS } from "../dummyData/bussiness";
 import businessModel from "../models/businessmodel";
 import { Card } from "react-native-elements";
@@ -40,8 +40,10 @@ const BusinessList = (props) => {
   const location = useSelector((state) => state.user.location);
 
   const [businessList, updateBusinessList] = useState([]);
+  const [loadingList, updateLoadingList] = useState(false);
 
   useEffect(() => {
+    updateLoadingList(true);
     let list = [];
     const business = firestore.collection("serviceCategory");
     const query = business
@@ -66,18 +68,19 @@ const BusinessList = (props) => {
           );
         });
         updateBusinessList(list);
-        // updateFilteredResults(getBusinessWithInDistance());
-        // console.log(filteredResults);
+        updateLoadingList(false);
+
       })
       .catch((err) => {
         console.log("Error getting documents", err);
+        updateLoadingList(false);
       });
   }, []);
 
   const getBusinessWithInDistance = () => {
     const filterList = [];
     // const businessList = BUSINESS[props.cid];
-    businessList.forEach((val)=> {
+    businessList.forEach((val) => {
       const lat = val.location.lat;
       const lng = val.location.lng;
 
@@ -87,6 +90,7 @@ const BusinessList = (props) => {
         filterList.push(val);
       }
     });
+    // updateLoadingList(false);
     return filterList;
   };
 
@@ -100,8 +104,7 @@ const BusinessList = (props) => {
 
   useEffect(() => {
     updateFilteredResults(getBusinessWithInDistance());
-
-  }, [props.distance,businessList]);
+  }, [props.distance, businessList]);
 
   const renderCards = (itemData) => {
     return (
@@ -111,9 +114,7 @@ const BusinessList = (props) => {
             // icon={<Icon name='code' color='#ffffff' />}
             onPress={() => {
               // const catSelecte = BUSINESS[props.cid];
-              dispatch(
-                businessAction.selectedBusiness(itemData.item)
-              );
+              dispatch(businessAction.selectedBusiness(itemData.item));
               props.cal(true);
             }}
             buttonStyle={styles.btn}
@@ -130,11 +131,18 @@ const BusinessList = (props) => {
   };
   return (
     <View>
-      <FlatList
-        data={filteredResults}
-        renderItem={renderCards}
-        keyExtractor={(item) => item.id}
-      />
+      {loadingList ? (
+        <View style={styles.lcontainer}>
+          <Text>Loading Options within {props.distance}KM</Text>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredResults}
+          renderItem={renderCards}
+          keyExtractor={(item) => item.id}
+        />
+      )}
     </View>
   );
 };
@@ -151,5 +159,13 @@ const styles = StyleSheet.create({
   btnContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
+  },
+  lcontainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+    minHeight: 300
   },
 });

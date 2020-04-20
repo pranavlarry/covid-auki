@@ -55,6 +55,12 @@ const Input = props => {
     if (props.minLength != null && text.length < props.minLength) {
       isValid = false;
     }
+    if (props.maxLength != null && text.length > props.maxLength) {
+      isValid = false;
+    }
+    if (props.onlyNum && !/^[0-9]*$/.test(text)) {
+      isValid = false;
+    }
     dispatch({ type: INPUT_CHANGE, value: text, isValid: isValid });
   };
 

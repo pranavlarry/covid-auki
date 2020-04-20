@@ -1,5 +1,4 @@
 import React, { useReducer, useCallback, useState } from "react";
-import { SocialIcon } from "react-native-elements";
 import {
   ScrollView,
   View,
@@ -9,12 +8,10 @@ import {
   Text,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useDispatch } from "react-redux";
 
 import Input from "../components/Input";
 import Card from "../components/Card";
 // import Colors from '../../constants/Colors';
-import * as authActions from "../store/actions/auth";
 import { firebaseAuth } from "../config";
 
 const FORM_INPUT_UPDATE = "FORM_INPUT_UPDATE";
@@ -42,8 +39,7 @@ const formReducer = (state, action) => {
   return state;
 };
 
-const AuthScreen = (props) => {
-  // const dispatch = useDispatch();
+const AuthScreen = React.memo((props) => {
   const [error,updateError] = useState("")
 
   const [formState, dispatchFormState] = useReducer(formReducer, {
@@ -58,13 +54,7 @@ const AuthScreen = (props) => {
     formIsValid: false,
   });
 
-  const signupHandler = () => {
-    // dispatch(
-    //   authActions.signup(
-    //     formState.inputValues.email,
-    //     formState.inputValues.password
-    //   )
-    // );
+  const signupHandler = useCallback(() => {
     firebaseAuth
       .signInWithEmailAndPassword(
         formState.inputValues.email,
@@ -72,7 +62,7 @@ const AuthScreen = (props) => {
       )
       .then(() => props.navigation.navigate("home"))
       .catch((error) => updateError(error.message));
-  };
+  },[formState.inputValues]);
 
   const inputChangeHandler = useCallback(
     (inputIdentifier, inputValue, inputValidity) => {
@@ -133,12 +123,10 @@ const AuthScreen = (props) => {
             </View>
           </ScrollView>
         </Card>
-        <SocialIcon style={{width: 200}} title="Sign In With Google" onPress={console.log("google")} button type="google" />
-        <SocialIcon style={{width: 200}} title="Sign In With Facebook" onPress={console.log("facebook")} button type="facebook" />
-      </LinearGradient>
+        </LinearGradient>
     </KeyboardAvoidingView>
   );
-};
+});
 
 AuthScreen.navigationOptions = {
   headerTitle: "Authenticate",
