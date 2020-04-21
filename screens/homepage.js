@@ -20,18 +20,18 @@ import * as Business from "../store/actions/business";
 import Constants from "expo-constants";
 import { Notifications } from "expo";
 
-
-
 registerForPushNotificationsAsync = async () => {
   if (Constants.isDevice) {
-    const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
+    const { status: existingStatus } = await Permissions.getAsync(
+      Permissions.NOTIFICATIONS
+    );
     let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
+    if (existingStatus !== "granted") {
       const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
       finalStatus = status;
     }
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
+    if (finalStatus !== "granted") {
+      alert("Failed to get push token for push notification!");
       return;
     }
     token = await Notifications.getExpoPushTokenAsync();
@@ -39,14 +39,16 @@ registerForPushNotificationsAsync = async () => {
     // console.log(token,"hiiii");
     // this.setState({ expoPushToken: token });
   } else {
-    alert("Your loaction won't be correnct and Push Notifications won't work on virtual device!");
+    alert(
+      "Your loaction won't be correnct and Push Notifications won't work on virtual device!"
+    );
   }
 
-  if (Platform.OS === 'android') {
-    Notifications.createChannelAndroidAsync('default', {
-      name: 'default',
+  if (Platform.OS === "android") {
+    Notifications.createChannelAndroidAsync("default", {
+      name: "default",
       sound: true,
-      priority: 'max',
+      priority: "max",
       vibrate: [0, 250, 250, 250],
     });
   }
@@ -58,6 +60,7 @@ const Homepage = React.memo((props) => {
   const [search, updateSearch] = useState("");
   const [isFetching, setIsFetching] = useState(false);
   const [filteredCat, UpdateFilteredCat] = useState("");
+  const [error, updateError] = useState(null);
   const [loadingService, updateLoadingService] = useState(false);
   const dispatch = useDispatch();
 
@@ -84,12 +87,14 @@ const Homepage = React.memo((props) => {
 
   useEffect(() => {
     if (categories.length === 0) {
+      updateError(null);
       updateLoadingService(true);
       dispatch(Business.setCategories())
         .then(() => {
           updateLoadingService(false);
         })
         .catch((err) => {
+          updateError(err.message);
           updateLoadingService(false);
         });
     }
@@ -122,6 +127,7 @@ const Homepage = React.memo((props) => {
       const location = await Location.getCurrentPositionAsync({
         timeout: 5000,
       });
+      console.log(location);
       dispatch(
         UserAction.setLocation({
           lat: location.coords.latitude,
@@ -162,40 +168,41 @@ const Homepage = React.memo((props) => {
             params: {
               categoryId: itemData.item.id,
             },
-          }); 
+          });
         }}
       />
     );
-  },[]);
+  }, []);
 
   return (
-      <View style={styles.container}>
-        <SearchBar
-          placeholder="Search for services "
-          onChangeText={handleSearch}
-          value={search}
-          lightTheme={true}
-        />
-        {loadingService ? (
-          <View style={styles.lcontainer}>
-            <Text>Loading Services</Text>
-            <ActivityIndicator size="large" />
-          </View>
-        ) : (
-          <View>
-            {filteredCat.length > 0 || search === "" ? (
-              <FlatList
-                data={search !== "" ? filteredCat : categories}
-                renderItem={renderGridItem}
-                keyExtractor={(item) => item.id}
-                numColumns={3}
-              />
-            ) : (
-              <Text>Sorry No Services Available</Text>
-            )}
-          </View>
-        )}
-      </View>
+    <View style={styles.container}>
+      <SearchBar
+        placeholder="Search for services "
+        onChangeText={handleSearch}
+        value={search}
+        lightTheme={true}
+      />
+      {error && (
+        <View style={styles.error}>
+          <Text>{error}</Text>
+        </View>
+      )}
+      {loadingService ? (
+        <View style={styles.lcontainer}>
+          <Text>Loading Services</Text>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : (
+        <View>
+          <FlatList
+            data={search !== "" ? filteredCat : categories}
+            renderItem={renderGridItem}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+          />
+        </View>
+      )}
+    </View>
   );
 });
 
@@ -228,6 +235,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 10,
+  },
+  error: {
+    width: "100%",
+    height: 400,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

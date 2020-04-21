@@ -22,19 +22,31 @@ const ManageAppointments = React.memo((props) => {
   app.sort((a, b) => {
     return new Date(b.date) - new Date(a.date);
   });
+  const [error, updateError] = useState(null);
   const [selectedBusiness, updateSelectedBusiness] = useState({});
   const [cancelStatus, updateCancelStatus] = useState({
     openStatus: false,
     status: "",
+    canceled: false,
   });
   const [rescheduleDetailes, updateRescheduleDetailes] = useState({
     openCal: false,
     invalidDate: false,
   });
 
+  const loadBookings = useCallback(async () => {
+    updateError(null);
+    try {
+      await dispatch(userAction.setAppointments(userId));
+    } catch (err) {
+      // console.log(err);
+      updateError(err.message);
+    }
+  });
+
   useEffect(() => {
     const willFocus = props.navigation.addListener("willFocus", () => {
-      dispatch(userAction.setAppointments(userId));
+      loadBookings();
     });
     return () => {
       willFocus.remove();
@@ -42,51 +54,76 @@ const ManageAppointments = React.memo((props) => {
   }, [dispatch, userAction.setAppointments]);
 
   useEffect(() => {
-    dispatch(userAction.setAppointments(userId));
-  }, [dispatch]);
+    if (cancelStatus.canceled === true) {
+      // dispatch(userAction.setAppointments(userId));
+      loadBookings();
+      updateCancelStatus((ps) => ({ ...ps, canceled: false }));
+    }
+  }, [cancelStatus.canceled]);
 
   const cancel = useCallback((id, bid, time, date) => {
-    const booking = firestore.collection("userBooking").doc(id);
-    const timeSlot = firestore
-      .collection(`timeSlots/${bid}/bookings`)
-      .doc(date);
-    updateCancelStatus({
-      openStatus: true,
-      status: "Please wait while we check you status",
-    });
-    firestore
-      .runTransaction(function (transaction) {
-        return transaction.get(timeSlot).then(function (tslot) {
-          const currentDatas = tslot.data();
-          const currentValue = currentDatas[time] - 1;
-          transaction.update(timeSlot, {
-            [time]: currentValue,
-          });
-          transaction.update(booking, {
-            bookingStatus: "canceled",
-          });
-          return "done";
-        });
-      })
-      .then((status) => {
-        if (status === "done") {
-          updateCancelStatus((ps) => ({
-            ...ps,
-            status: "Your Booking is canceled",
-          }));
-        } else {
-          updateCancelStatus((ps) => ({
-            ...ps,
-            status:
-              "Sorry were unable to process your request please directly contact the business agents if it is urgent",
-          }));
-        }
-      })
-      .catch((err) => {
-        updateCancelStatus(
-          "Sorry were unable to process your request please directly contact the business agents if it is urgent"
-        );
-      });
+    Alert.alert(
+      "Cancel appointment",
+      "Are you sure you want to cancel the appointment",
+      [
+        {
+          text: "Yes Cancel",
+          onPress: () => {
+            const booking = firestore.collection("userBooking").doc(id);
+            const timeSlot = firestore
+              .collection(`timeSlots/${bid}/bookings`)
+              .doc(date);
+            updateCancelStatus({
+              openStatus: true,
+              canceled: false,
+              status: "Please wait while we check you status",
+            });
+            firestore
+              .runTransaction(function (transaction) {
+                return transaction.get(timeSlot).then(function (tslot) {
+                  const currentDatas = tslot.data();
+                  const currentValue = currentDatas[time] - 1;
+                  transaction.update(timeSlot, {
+                    [time]: currentValue,
+                  });
+                  transaction.update(booking, {
+                    appointmentStatus: "cancelled",
+                    bookingStatus: "cancelled",
+                  });
+                  return "done";
+                });
+              })
+              .then((status) => {
+                if (status === "done") {
+                  updateCancelStatus((ps) => ({
+                    ...ps,
+                    canceled: true,
+                    status: "Your Booking is canceled",
+                  }));
+                } else {
+                  updateCancelStatus((ps) => ({
+                    ...ps,
+                    canceled: false,
+                    status:
+                      "Sorry were unable to process your request please directly contact the business agents if it is urgent",
+                  }));
+                }
+              })
+              .catch((err) => {
+                updateCancelStatus((ps) => ({
+                  ...ps,
+                  canceled: false,
+                  status:
+                    "Sorry were unable to process your request please directly contact the business agents if it is urgent",
+                }));
+              });
+          },
+        },
+        {
+          text: "Close",
+        },
+      ]
+    );
   }, []);
 
   const checkAvailability = useCallback(
@@ -175,6 +212,18 @@ const ManageAppointments = React.memo((props) => {
     [formatDate, tDate]
   );
 
+  const pastAppointment = (date, time) => {
+    const startTime = time.slice(0, 5).split(":");
+    const changeDate = date.split("-").join("/");
+    if (startTime[0] > 12) startTime[0] = 12 + parseInt(startTime[0]);
+    // console.log(startTime)
+    const bdate = changeDate + " " + startTime[0] + ":" + startTime[1];
+    if (new Date() > new Date(bdate)) {
+      return true;
+    }
+    return false;
+  };
+
   const renderAppoinment = useCallback(
     (itemData) => {
       const check =
@@ -201,13 +250,27 @@ const ManageAppointments = React.memo((props) => {
                 {itemData.item.bookingStatus === "open" && (
                   <View>
                     <Button
-                      onPress={cancel.bind(
-                        this,
-                        itemData.item.id,
-                        itemData.item.businessId,
-                        itemData.item.time,
-                        itemData.item.date
-                      )}
+                      onPress={() => {
+                        if (
+                          !pastAppointment(
+                            itemData.item.date,
+                            itemData.item.time
+                          )
+                        ) {
+                          cancel(
+                            itemData.item.id,
+                            itemData.item.businessId,
+                            itemData.item.time,
+                            itemData.item.date
+                          );
+                        } else {
+                          Alert.alert(
+                            "Can't Cancel",
+                            "Your booking is already completed the business agent might not have updated the status",
+                            [{ text: "OK" }]
+                          );
+                        }
+                      }}
                       title="Cancel Booking"
                     />
                   </View>
@@ -229,13 +292,24 @@ const ManageAppointments = React.memo((props) => {
               {itemData.item.bookingStatus === "open" && (
                 <Button
                   title="Reschedule"
-                  onPress={reschedule.bind(
-                    this,
-                    itemData.item.id,
-                    itemData.item.businessId,
-                    itemData.item.time,
-                    itemData.item.date
-                  )}
+                  onPress={() => {
+                    if (
+                      !pastAppointment(itemData.item.date, itemData.item.time)
+                    ) {
+                      reschedule(
+                        itemData.item.id,
+                        itemData.item.businessId,
+                        itemData.item.time,
+                        itemData.item.date
+                      );
+                    } else {
+                      Alert.alert(
+                        "Can't Reschedule",
+                        "Your booking is already completed the business agent might not have updated the status",
+                        [{ text: "OK" }]
+                      );
+                    }
+                  }}
                 />
               )}
             </React.Fragment>
@@ -272,11 +346,17 @@ const ManageAppointments = React.memo((props) => {
         </React.Fragment>
       </Overlay>
       <View>
-        <FlatList
-          data={app}
-          renderItem={renderAppoinment}
-          keyExtractor={(item) => item.id}
-        />
+        {error ? (
+          <View style={styles.error}>
+          <Text>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={app}
+            renderItem={renderAppoinment}
+            keyExtractor={(item) => item.id}
+          />
+        )}
       </View>
       <Overlay isVisible={rescheduleDetailes.openCal}>
         <React.Fragment>
@@ -384,4 +464,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 5,
   },
+  error: {
+    height: 400,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center"
+  }
 });

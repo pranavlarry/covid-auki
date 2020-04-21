@@ -15,34 +15,36 @@ export const setAppointments = (userId) => {
     try {
       const bookings = firestore.collection("userBooking");
       const query = bookings.where("userId", "==", userId).get();
-
-      (await query).forEach((doc) => {
-        const data = doc.data();
-        // console.log(,doc.id);
-        app.push(
-          new Booking(
-            doc.id,
-            data.bookingStatus,
-            data.appointmentStatus,
-            data.date,
-            data.time,
-            data.bName,
-            data.businessId,
-          )
-        );
-        // console.log(app);
-      });
-
-      // console.log(app);
-
-      //   const data = (await query).data();
-      //   console.log(data,"hoii");
-      //   for (let id in data) {
-
-      //   }
+      // if (!query.ok) {
+      //   throw new Error('Something went wrong!');
+      // }
+      if(!(await query).empty) {
+        (await query).forEach((doc) => {
+          const data = doc.data();
+          // console.log(,doc.id);
+          app.push(
+            new Booking(
+              doc.id,
+              data.bookingStatus,
+              data.appointmentStatus,
+              data.date,
+              data.time,
+              data.bName,
+              data.businessId,
+            )
+          );
+        });
       dispatch({ type: SET_APPOINTMENTS, app });
+
+      }
+      else {
+        // throw ;
+        throw new Error("No Appointments to display")
+      }
+
     } catch (err) {
-      console.log(error);
+      console.log(err);
+      throw err;
     }
   };
   // return {type: SET_APPOINTMENTS,app}

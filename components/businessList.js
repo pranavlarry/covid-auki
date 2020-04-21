@@ -6,7 +6,7 @@ import {
   Button,
   ActivityIndicator,
   Text,
-  Alert
+  Alert,
 } from "react-native";
 // import { BUSINESS } from "../dummyData/bussiness";
 import businessModel from "../models/businessmodel";
@@ -46,41 +46,45 @@ const BusinessList = (props) => {
   const dispatch = useDispatch();
 
   const location = useSelector((state) => state.user.location);
-
+  const [error, updateError] = useState(null);
   const [businessList, updateBusinessList] = useState([]);
   const [loadingList, updateLoadingList] = useState(false);
 
   useEffect(() => {
     updateLoadingList(true);
     let list = [];
+    updateError(null);
     const business = firestore.collection("serviceCategory");
     const query = business
       .where("category", "==", props.cid)
       .get()
       .then((res) => {
-        if (res.empty) {
-          console.log("empty"); //handle this
-          return;
+        if (!res.empty) {
+          // console.log("empty"); //handle this
+          // return;
+          res.forEach((doc) => {
+            list.push(
+              new businessModel(
+                doc.id,
+                doc.data().name,
+                doc.data().location,
+                doc.data().personPerSlot,
+                doc.data().holidays,
+                doc.data().timing,
+                doc.data().slotInterval,
+                doc.data().contact
+              )
+            );
+          });
+          updateBusinessList(list);
+          updateLoadingList(false);
+        } else {
+          throw new Error(`No Service available`);
         }
-        res.forEach((doc) => {
-          list.push(
-            new businessModel(
-              doc.id,
-              doc.data().name,
-              doc.data().location,
-              doc.data().personPerSlot,
-              doc.data().holidays,
-              doc.data().timing,
-              doc.data().slotInterval,
-              doc.data().contact
-            )
-          );
-        });
-        updateBusinessList(list);
-        updateLoadingList(false);
       })
       .catch((err) => {
-        console.log("Error getting documents", err);
+        // console.log("Error getting documents", err);
+        updateError(err.message);
         updateLoadingList(false);
       });
   }, []);
@@ -93,7 +97,13 @@ const BusinessList = (props) => {
       const lng = parseFloat(val.location.lng);
 
       if (
-        distance(parseFloat(location.lat),parseFloat(location.lng), lat, lng, "k") <= props.distance
+        distance(
+          parseFloat(location.lat),
+          parseFloat(location.lng),
+          lat,
+          lng,
+          "k"
+        ) <= props.distance
       ) {
         filterList.push(val);
       }
@@ -133,8 +143,8 @@ const BusinessList = (props) => {
             onPress={() => {
               if (itemData.item.contact) {
                 callNumber(itemData.item.contact);
-              }else {
-                Alert.alert('Phone number is not available');
+              } else {
+                Alert.alert("Phone number is not available");
               }
             }}
             buttonStyle={styles.btn}
@@ -157,6 +167,11 @@ const BusinessList = (props) => {
           renderItem={renderCards}
           keyExtractor={(item) => item.id}
         />
+      )}
+      {error && (
+        <View style={styles.error}>
+          <Text>{error}</Text>
+        </View>
       )}
     </View>
   );
@@ -183,4 +198,10 @@ const styles = StyleSheet.create({
     padding: 10,
     minHeight: 300,
   },
+  error: {
+    width: "100%",
+    height: 400,
+    justifyContent: "center",
+    alignItems: "center"
+  }
 });

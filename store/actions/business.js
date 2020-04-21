@@ -15,15 +15,22 @@ export const setCategories = () => {
         try {
             const response = firestore.collection("categories").doc("list").get();
 
-            const data = (await response).data()
-            for(let id in data) {
-                categories.push(new ServiceCategory(id,data[id].name,data[id].icon));
-
+            if(!(await response).empty) {
+                const data = (await response).data();
+                for(let id in data) {
+                    categories.push(new ServiceCategory(id,data[id].name,data[id].icon));
+    
+                }
+                dispatch({type:SET_CATEGORIES,categories});
             }
-            dispatch({type:SET_CATEGORIES,categories});
+            else {
+                throw new Error("No Categories Found")
+            }
+
         }
         catch (err) {
-            console.log(err);
+            // console.log(err);
+            throw err;
         }
     }
     // return {type: SET_CATEGORIES, }

@@ -42,7 +42,7 @@ const MainNavigator = createStackNavigator({
     screen: AppointmentsNavigator,
     navigationOptions: {
       title: 'Home',
-      header: null //this will hide the header
+      headerShown: false //this will hide the header
     },
   },
 },{
