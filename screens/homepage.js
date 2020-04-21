@@ -9,15 +9,48 @@ import {
 } from "react-native";
 import { SearchBar } from "react-native-elements";
 import { HeaderButtons, Item } from "react-navigation-header-buttons";
-import Geocoder from "react-native-geocoding";
+// import Geocoder from "react-native-geocoding";
 import * as Location from "expo-location";
 import * as Permissions from "expo-permissions";
 import HeaderButton from "../components/headerButton";
-import AllServiceCat from "../components/allServiceCategories";
 import CategoryGridTile from "../components/CategoryGridTile";
-import * as SetLoc from "../store/actions/user";
+import * as UserAction from "../store/actions/user";
 import { useDispatch, useSelector } from "react-redux";
 import * as Business from "../store/actions/business";
+import Constants from "expo-constants";
+import { Notifications } from "expo";
+
+
+
+registerForPushNotificationsAsync = async () => {
+  if (Constants.isDevice) {
+    const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+    token = await Notifications.getExpoPushTokenAsync();
+    UserAction.setNotification(token);
+    // console.log(token,"hiiii");
+    // this.setState({ expoPushToken: token });
+  } else {
+    alert("Your loaction won't be correnct and Push Notifications won't work on virtual device!");
+  }
+
+  if (Platform.OS === 'android') {
+    Notifications.createChannelAndroidAsync('default', {
+      name: 'default',
+      sound: true,
+      priority: 'max',
+      vibrate: [0, 250, 250, 250],
+    });
+  }
+};
 
 // AIzaSyAGDHLqd2GWGd3n3ia3dkwYek926FSyecI
 const Homepage = React.memo((props) => {
@@ -60,8 +93,10 @@ const Homepage = React.memo((props) => {
           updateLoadingService(false);
         });
     }
+    registerForPushNotificationsAsync();
     getLocationHandler();
-  }, []);
+    // const _notificationSubscription = Notifications.addListener(this._handleNotification);
+  }, [categories]);
 
   const verifyPermissions = async () => {
     const result = await Permissions.askAsync(Permissions.LOCATION);
@@ -88,7 +123,7 @@ const Homepage = React.memo((props) => {
         timeout: 5000,
       });
       dispatch(
-        SetLoc.setLocation({
+        UserAction.setLocation({
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         })

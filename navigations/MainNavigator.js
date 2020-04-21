@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from "react-navigation-stack";
 import { createAppContainer, createSwitchNavigator } from "react-navigation";
-import { Platform, Text, View, SafeAreaView,TouchableOpacity, Alert } from "react-native";
+import { Platform, Text, View, SafeAreaView,TouchableOpacity, Alert, Settings } from "react-native";
 import {
   createDrawerNavigator,
   DrawerNavigatorItems,
@@ -14,6 +14,19 @@ import AuthScreen from "../screens/AuthScreen";
 import SignUp from "../screens/signUpScreen";
 import Loading from "../screens/loading";
 import {firebaseAuth} from "../config";
+import SettingsScreen from "../screens/settingsScreen";
+import Feedback from "../screens/feedbackScreen";
+
+const AppointmentsNavigator = createStackNavigator({
+  manage: {
+    screen: ManageAppointments,
+  },
+  bookingScreen: {
+    screen: BookingScreen,
+  },
+},{
+  initialRouteName: 'manage'
+});
 
 const MainNavigator = createStackNavigator({
   homeScreen: {
@@ -26,22 +39,29 @@ const MainNavigator = createStackNavigator({
     screen: BookingScreen,
   },
   manage: {
-    screen: ManageAppointments,
+    screen: AppointmentsNavigator,
+    navigationOptions: {
+      title: 'Home',
+      header: null //this will hide the header
+    },
   },
 },{
   initialRouteName: "homeScreen"
 });
 
-const AppointmentsNavigator = createStackNavigator({
-  manage: {
-    screen: ManageAppointments,
-  },
-  bookingScreen: {
-    screen: BookingScreen,
-  },
-},{
-  initialRouteName: 'manage'
+const AccountSettingsNavigator = createStackNavigator({
+  settings: {
+    screen: SettingsScreen
+  }
 });
+
+const FeedbackNavigator = createStackNavigator({
+  feedbak: {
+    screen: Feedback
+  }
+})
+
+
 const SideNavigator = createDrawerNavigator(
   {
     homePage: {
@@ -54,6 +74,18 @@ const SideNavigator = createDrawerNavigator(
       screen: AppointmentsNavigator,
       navigationOptions: {
         drawerLabel: "Manage Appointments",
+      },
+    },
+    SettingsPage: {
+      screen: AccountSettingsNavigator,
+      navigationOptions: {
+        drawerLabel: "Settings",
+      },
+    },
+    FeedbackPage: {
+      screen: FeedbackNavigator,
+      navigationOptions: {
+        drawerLabel: "Feedback",
       },
     },
   },

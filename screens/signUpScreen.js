@@ -105,7 +105,7 @@ const SignUp = React.memo((props) => {
             />
             <Input
               id="phone"
-              label="Your Full Phone No"
+              label="Your Phone No"
               required
               keyboardType="number-pad"
               minLength={10}
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   authContainer: {
     width: "80%",
     maxWidth: 400,
-    maxHeight: 400,
+    maxHeight: 800,
     padding: 20,
   },
   input: {

@@ -1,6 +1,7 @@
 export const SET_USER_LOC = "SET_USER_LOC";
 export const SET_USER_DETAILS = "SET_USER_DETAILS";
 export const SET_APPOINTMENTS = "GET_APPOINTMENTS";
+export const SET_NOTIFICATION = "SET_NOTIFICATION";
 import Booking from "../../models/bookingModel";
 import { firestore } from "../../config";
 
@@ -32,7 +33,7 @@ export const setAppointments = (userId) => {
         // console.log(app);
       });
 
-      console.log(app);
+      // console.log(app);
 
       //   const data = (await query).data();
       //   console.log(data,"hoii");
@@ -50,3 +51,7 @@ export const setAppointments = (userId) => {
 export const setUser = (user) => {
   return { type: SET_USER_DETAILS, user };
 };
+
+export const setNotification = (token) => {
+  return {type: SET_NOTIFICATION, token}
+}

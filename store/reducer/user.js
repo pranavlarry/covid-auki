@@ -1,4 +1,4 @@
-import {SET_USER_LOC,SET_APPOINTMENTS,SET_USER_DETAILS} from '../actions/user';
+import {SET_USER_LOC,SET_APPOINTMENTS,SET_USER_DETAILS,SET_NOTIFICATION} from '../actions/user';
 
 
 const initialState={
@@ -7,7 +7,8 @@ const initialState={
     location: {
         lat: '',
         lng: ''
-    }
+    },
+    notificationToken: ""
 };
 
 export default (state=initialState, action)=> {
@@ -25,6 +26,8 @@ export default (state=initialState, action)=> {
             return {...state, appointments: action.app}
         case SET_USER_DETAILS: 
             return {...state,user: action.user}
+        case SET_NOTIFICATION:
+            return {...state,notificationToken: action.token}
         default: // need this for default case
             return state 
     }

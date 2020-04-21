@@ -10,7 +10,9 @@ import { useSelector } from "react-redux";
 import Input from "../components/Input";
 import { Overlay } from "react-native-elements";
 import { firestore, firebaseAuth } from "../config";
+import {sendPushNotification} from "../helper/helperFunctions";
 const FORM_INPUT_UPDATE = "FORM_INPUT_UPDATE";
+
 
 const formReducer = (state, action) => {
   if (action.type === FORM_INPUT_UPDATE) {
@@ -42,6 +44,7 @@ const changeFormat = (time) => {
   if (parseInt(timeArr[0]) <= 12) {
     timeStr = timeArr[0];
     amOrPm = " am";
+    timeStr === "12" && (amOrPm = "pm");
   } else {
     timeStr = "" + (parseInt(timeArr[0]) - 12);
     amOrPm = " pm";
@@ -118,6 +121,8 @@ const BookingScreen = React.memo((props) => {
   const selectedBussiness = useSelector(
     (state) => state.business.selectedBusiness
   );
+
+  const nToken = useSelector( state => state.user.notificationToken);
 
   const [timeSlots, updateTimeSlots] = useState(
     getSlots(
@@ -213,6 +218,8 @@ const BookingScreen = React.memo((props) => {
           updateBookingStatus(
             "Your booking is successful check your Manage appointments section for more details."
           );
+          //change business name
+          sendPushNotification("Booking Success",`Your booking at business name between is registered`,nToken);
         }
       })
       .catch(function (err) {
@@ -375,12 +382,12 @@ const BookingScreen = React.memo((props) => {
                 initialValue=""
               />
             )}
-            <View style={styles.bookBtn}>
+          </View>
+          <View style={styles.bookBtn}>
               <Button
                 title="Confirm Booking"
                 onPress={isReshedule ? handleReshedule : handleBooking}
               />
-            </View>
           </View>
         </React.Fragment>
       )}

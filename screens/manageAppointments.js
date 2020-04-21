@@ -15,9 +15,13 @@ import { formatDate, callNumber } from "../helper/helperFunctions";
 let tDate = new Date();
 
 const ManageAppointments = React.memo((props) => {
+  const type = props.navigation.getParam("type");
   const dispatch = useDispatch();
   const userId = firebaseAuth.currentUser.uid;
   const app = useSelector((state) => state.user.appointments);
+  app.sort((a, b) => {
+    return new Date(b.date) - new Date(a.date);
+  });
   const [selectedBusiness, updateSelectedBusiness] = useState({});
   const [cancelStatus, updateCancelStatus] = useState({
     openStatus: false,
@@ -32,15 +36,14 @@ const ManageAppointments = React.memo((props) => {
     const willFocus = props.navigation.addListener("willFocus", () => {
       dispatch(userAction.setAppointments(userId));
     });
-    console.log("hooii");
     return () => {
       willFocus.remove();
     };
   }, [dispatch, userAction.setAppointments]);
 
-  // useEffect(() => {
-  //   dispatch(userAction.setAppointments(userId));
-  // }, [dispatch]);
+  useEffect(() => {
+    dispatch(userAction.setAppointments(userId));
+  }, [dispatch]);
 
   const cancel = useCallback((id, bid, time, date) => {
     const booking = firestore.collection("userBooking").doc(id);
@@ -174,71 +177,89 @@ const ManageAppointments = React.memo((props) => {
 
   const renderAppoinment = useCallback(
     (itemData) => {
-      return (
-        <Card>
-          <React.Fragment>
-            <Text style={{ paddingVertical: 5 }}>
-              Booking id: {itemData.item.id}
-            </Text>
-            <Text style={{ paddingVertical: 5 }}>
-              Business Name: {itemData.item.businessName}
-            </Text>
-            <View style={styles.row}>
-              <Text>Time: {itemData.item.time}</Text>
-              <Text>Date: {itemData.item.date}</Text>
-            </View>
-            <Text>Booking Staus: {itemData.item.bookingStatus}</Text>
-            <Text>Appointment Status: {itemData.item.appointmentStatus}</Text>
-            <View style={styles.row}>
-              {itemData.item.bookingStatus === "open" && (
+      const check =
+        type === "cancel"
+          ? itemData.item.bookingStatus !== "open"
+          : itemData.item.bookingStatus === "open";
+      if (check) {
+        return (
+          <Card>
+            <React.Fragment>
+              <Text style={{ paddingVertical: 5 }}>
+                Booking id: {itemData.item.id}
+              </Text>
+              <Text style={{ paddingVertical: 5 }}>
+                Business Name: {itemData.item.businessName}
+              </Text>
+              <View style={styles.row}>
+                <Text>Time: {itemData.item.time}</Text>
+                <Text>Date: {itemData.item.date}</Text>
+              </View>
+              <Text>Booking Staus: {itemData.item.bookingStatus}</Text>
+              <Text>Appointment Status: {itemData.item.appointmentStatus}</Text>
+              <View style={styles.row}>
+                {itemData.item.bookingStatus === "open" && (
+                  <View>
+                    <Button
+                      onPress={cancel.bind(
+                        this,
+                        itemData.item.id,
+                        itemData.item.businessId,
+                        itemData.item.time,
+                        itemData.item.date
+                      )}
+                      title="Cancel Booking"
+                    />
+                  </View>
+                )}
+
                 <View>
                   <Button
-                    onPress={cancel.bind(
-                      this,
-                      itemData.item.id,
-                      itemData.item.businessId,
-                      itemData.item.time,
-                      itemData.item.date
-                    )}
-                    title="Cancel Booking"
+                    onPress={() => {
+                      if (itemData.item.contact) {
+                        callNumber(itemData.item.contact);
+                      } else {
+                        Alert.alert("Phone number is not available");
+                      }
+                    }}
+                    title="Contact"
                   />
                 </View>
-              )}
-
-              <View>
-                <Button
-                  onPress={() => {
-                    if (itemData.item.contact) {
-                      callNumber(itemData.item.contact);
-                    } else {
-                      Alert.alert("Phone number is not available");
-                    }
-                  }}
-                  title="Contact"
-                />
               </View>
-            </View>
-            {itemData.item.bookingStatus === "open" && (
-              <Button
-                title="Reschedule"
-                onPress={reschedule.bind(
-                  this,
-                  itemData.item.id,
-                  itemData.item.businessId,
-                  itemData.item.time,
-                  itemData.item.date
-                )}
-              />
-            )}
-          </React.Fragment>
-        </Card>
-      );
+              {itemData.item.bookingStatus === "open" && (
+                <Button
+                  title="Reschedule"
+                  onPress={reschedule.bind(
+                    this,
+                    itemData.item.id,
+                    itemData.item.businessId,
+                    itemData.item.time,
+                    itemData.item.date
+                  )}
+                />
+              )}
+            </React.Fragment>
+          </Card>
+        );
+      } else {
+        return null;
+      }
     },
     [reschedule, cancel]
   );
 
   return (
     <React.Fragment>
+      {type === undefined && (
+        <Button
+          title="View Canceled and Closed bookings"
+          onPress={() => {
+            props.navigation.push("manage", {
+              type: "cancel",
+            });
+          }}
+        />
+      )}
       <Overlay isVisible={cancelStatus.openStatus}>
         <React.Fragment>
           <Text>{cancelStatus.status}</Text>
@@ -250,11 +271,13 @@ const ManageAppointments = React.memo((props) => {
           />
         </React.Fragment>
       </Overlay>
-      <FlatList
-        data={app}
-        renderItem={renderAppoinment}
-        keyExtractor={(item) => item.id}
-      />
+      <View>
+        <FlatList
+          data={app}
+          renderItem={renderAppoinment}
+          keyExtractor={(item) => item.id}
+        />
+      </View>
       <Overlay isVisible={rescheduleDetailes.openCal}>
         <React.Fragment>
           <Text>Select A Date</Text>
@@ -292,11 +315,10 @@ const ManageAppointments = React.memo((props) => {
             hideArrows={false}
             // Replace default arrows with custom ones (direction can be 'left' or 'right')
             renderArrow={(direction) => {
-              if(direction==='right') {
-                return (<Text>Next</Text>);
-              }
-              else if (direction === 'left')  {
-                return (<Text>Prev</Text>);
+              if (direction === "right") {
+                return <Text>Next</Text>;
+              } else if (direction === "left") {
+                return <Text>Prev</Text>;
               }
             }}
             // Do not show days of other months in month page. Default = false
