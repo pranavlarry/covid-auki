@@ -14,19 +14,14 @@ import { firestore, firebaseAuth } from "../config";
 import { sendPushNotification } from "../helper/helperFunctions";
 import TimeSlots from "../components/timeSlots";
 
-
-
 const BookingScreen = React.memo((props) => {
   const isReshedule = props.navigation.getParam("reschedule"); //is it rescheduling or new booking
   const [bookingStatus, updateBookingStatus] = useState("");
-  const [bookingModal, updateBookingModal] = useState(false); 
+  const [bookingModal, updateBookingModal] = useState(false);
   const [selectedTime, updateSelectedTime] = useState(""); //selected time
   const [loadingTime, updateLoadingTime] = useState(false); //loading spinner
 
-
-
-
- //clicked business
+  //clicked business
   const selectedBussiness = useSelector(
     (state) => state.business.selectedBusiness
   );
@@ -34,19 +29,13 @@ const BookingScreen = React.memo((props) => {
   //notification token
   const nToken = useSelector((state) => state.user.notificationToken);
 
-  
-  
-
   const [enterpurpose, updatePurpose] = useState("");
-  
 
   const handlePurpose = useCallback((text) => {
-    if(/^[A-Za-z ]*$/.test(text)) {
+    if (/^[A-Za-z ]*$/.test(text)) {
       updatePurpose(text);
     }
   });
-
-
 
   // const inputChangeHandler = useCallback(
   //   (inputIdentifier, inputValue, inputValidity) => {
@@ -59,6 +48,22 @@ const BookingScreen = React.memo((props) => {
   //   },
   //   [dispatchFormState]
   // );
+
+  const completeBooking = (transaction,timeSlotUpdate,bookingDoc,alldata,user) => {
+    transaction.set(timeSlotUpdate,alldata);
+    transaction.set(bookingDoc, {
+      businessId: selectedBussiness.id,
+      userId: user.uid,
+      username: user.displayName,
+      email: user.email,
+      time: selectedTime,
+      bookingStatus: "open",
+      appointmentStatus: "walk-in",
+      businessName: selectedBussiness.name,
+      date: props.navigation.getParam("date"),
+      purpose: enterpurpose,
+    });
+  }
 
   const handleBooking = useCallback(() => {
     if (enterpurpose === "" || selectedTime === "") {
@@ -77,36 +82,35 @@ const BookingScreen = React.memo((props) => {
         .doc(props.navigation.getParam("date"));
       firestore
         .runTransaction(function (transaction) {
-          return transaction.get(timeSlotUpdate).then(function (tSlot) {
-            var currentBookings = tSlot.data();
-            try {
-              var slotBookingNo = currentBookings[selectedTime];
-            } catch {
-              var slotBookingNo = undefined;
+          return transaction.get(timeSlotUpdate).then(function (slotVal) {
+            const alldata = {...slotVal.data()};
+            const data = {...alldata[selectedTime]};
+            const count = 0;
+            const flag=true;
+            if(data[user.uid].toDate() > new Date()) {//error if slot is locked becz data[user.uid] undefined
+              data[user.uid] = "booked";
+              alldata[selectedTime] = data;
+              completeBooking(transaction,timeSlotUpdate,bookingDoc,alldata,user);
+              return "done";
             }
-            if (
-              slotBookingNo < selectedBussiness.personsPerSlot ||
-              slotBookingNo == undefined
-            ) {
-              var newVal = slotBookingNo ? slotBookingNo + 1 : 1;
-              currentBookings
-                ? transaction.set(timeSlotUpdate, {
-                    ...currentBookings,
-                    [selectedTime]: newVal,
-                  })
-                : transaction.set(timeSlotUpdate, { [selectedTime]: newVal });
-              transaction.set(bookingDoc, {
-                businessId: selectedBussiness.id,
-                userId: user.uid,
-                username: user.displayName,
-                email: user.email,
-                time: selectedTime,
-                bookingStatus: "open",
-                appointmentStatus: "walk-in",
-                businessName: selectedBussiness.name,
-                date: props.navigation.getParam("date"),
-                purpose: enterpurpose,
-              });
+            else {
+              for(let key in data) {
+                if(data[key] === "unbooked" || data[key].toDate() < new Date()) {
+                  data[user.uid]="booked";
+                  if(key !== user.uid){
+                    delete data[key];
+                  }
+                  flag=false;
+                }
+                count++;
+              }
+              if(flag){
+                if(count < selectedBussiness.personsPerSlot) {
+                  data[user.id]="booked";
+                }
+              }
+              alldata[selectedTime] = data;
+              completeBooking(transaction,timeSlotUpdate,bookingDoc,alldata,user);
               return "done";
             }
           });
@@ -259,7 +263,12 @@ const BookingScreen = React.memo((props) => {
               flexWrap: "wrap",
             }}
           >
-            <TimeSlots selectedTime={selectedTime} loadingTime={updateLoadingTime} updateSelection={updateSelectedTime} date ={props.navigation.getParam("date")}/>
+            <TimeSlots
+              selectedTime={selectedTime}
+              loadingTime={updateLoadingTime}
+              updateSelection={updateSelectedTime}
+              date={props.navigation.getParam("date")}
+            />
             {!isReshedule && (
               <React.Fragment>
                 <View style={{ width: "100%" }}>
