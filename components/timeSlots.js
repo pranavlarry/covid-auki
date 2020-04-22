@@ -85,6 +85,7 @@ const TimeSlots = (props) => {
                   return formatedTimeSlots;
               }
               else if(slot[user].toDate() > new Date()) {
+                console.log("here");
                   lockTheSlot(elem);
                   props.updateSelection(elem);
               }
@@ -93,7 +94,7 @@ const TimeSlots = (props) => {
 
             }
             for (let key in slot) {
-                if (slot[key].toDate() > new Date() || slot[key] ==="booked") {
+                if ((slot[key].toDate() > new Date() && key !== user) || slot[key] ==="booked") {
                     count++;
                 }
             }
