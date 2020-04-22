@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, Button } from "react-native";
+import { View, Button, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 import { firebaseAuth, firestore } from "../config";
 
@@ -181,10 +181,9 @@ const TimeSlots = (props) => {
   return (
       <React.Fragment>
     {checkedtimeslots.map((elem, index) => {
-        const color = props.selectedTime === elem ? "blue" : "#3492e3"; ; 
-        //  style={styles.timeSlots}
+        const color = props.selectedTime === elem ? "blue" : "#3492e3";  
         return (
-          <View key={index} >
+          <View key={index} style={styles.timeSlots}>
             <Button
               color={color}
               title={elem}
@@ -199,3 +198,10 @@ const TimeSlots = (props) => {
 };
 
 export default TimeSlots;
+
+const styles = StyleSheet.create({
+  timeSlots: {
+    paddingVertical: 10,
+    width: 100,
+  }
+});

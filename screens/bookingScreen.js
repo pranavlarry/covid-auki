@@ -37,20 +37,15 @@ const BookingScreen = React.memo((props) => {
     }
   });
 
-  // const inputChangeHandler = useCallback(
-  //   (inputIdentifier, inputValue, inputValidity) => {
-  //     dispatchFormState({
-  //       type: FORM_INPUT_UPDATE,
-  //       value: inputValue,
-  //       isValid: inputValidity,
-  //       input: inputIdentifier,
-  //     });
-  //   },
-  //   [dispatchFormState]
-  // );
-
-  const completeBooking = (transaction,timeSlotUpdate,bookingDoc,alldata,user) => {
-    transaction.set(timeSlotUpdate,alldata);
+  //writing booking data
+  const completeBooking = (
+    transaction,
+    timeSlotUpdate,
+    bookingDoc,
+    alldata,
+    user
+  ) => {
+    transaction.set(timeSlotUpdate, alldata);
     transaction.set(bookingDoc, {
       businessId: selectedBussiness.id,
       userId: user.uid,
@@ -63,8 +58,9 @@ const BookingScreen = React.memo((props) => {
       date: props.navigation.getParam("date"),
       purpose: enterpurpose,
     });
-  }
+  };
 
+  //booking fn convert the commen booking process to a fun
   const handleBooking = useCallback(() => {
     if (enterpurpose === "" || selectedTime === "") {
       Alert.alert("Wrong Value", "Please Select Correct values", [
@@ -83,34 +79,52 @@ const BookingScreen = React.memo((props) => {
       firestore
         .runTransaction(function (transaction) {
           return transaction.get(timeSlotUpdate).then(function (slotVal) {
-            const alldata = {...slotVal.data()};
-            const data = {...alldata[selectedTime]};
+            const alldata = { ...slotVal.data() };
+            const data = { ...alldata[selectedTime] };
             const count = 0;
-            const flag=true;
-            if(data[user.uid].toDate() > new Date()) {//error if slot is locked becz data[user.uid] undefined
+            const flag = true;
+            if (
+              data[user.uid] !== undefined &&
+              data[user.uid].toDate() > new Date()
+            ) {
+              //error if slot is not locked becz data[user.uid] undefined
               data[user.uid] = "booked";
               alldata[selectedTime] = data;
-              completeBooking(transaction,timeSlotUpdate,bookingDoc,alldata,user);
+              completeBooking(
+                transaction,
+                timeSlotUpdate,
+                bookingDoc,
+                alldata,
+                user
+              );
               return "done";
-            }
-            else {
-              for(let key in data) {
-                if(data[key] === "unbooked" || data[key].toDate() < new Date()) {
-                  data[user.uid]="booked";
-                  if(key !== user.uid){
+            } else {
+              for (let key in data) {
+                if (
+                  data[key] === "unbooked" ||
+                  data[key].toDate() < new Date()
+                ) {
+                  data[user.uid] = "booked";
+                  if (key !== user.uid) {
                     delete data[key];
                   }
-                  flag=false;
+                  flag = false;
                 }
                 count++;
               }
-              if(flag){
-                if(count < selectedBussiness.personsPerSlot) {
-                  data[user.id]="booked";
+              if (flag) {
+                if (count < selectedBussiness.personsPerSlot) {
+                  data[user.id] = "booked";
                 }
               }
               alldata[selectedTime] = data;
-              completeBooking(transaction,timeSlotUpdate,bookingDoc,alldata,user);
+              completeBooking(
+                transaction,
+                timeSlotUpdate,
+                bookingDoc,
+                alldata,
+                user
+              );
               return "done";
             }
           });
@@ -137,7 +151,10 @@ const BookingScreen = React.memo((props) => {
     }
   }, [firebaseAuth.currentUser, enterpurpose, selectedBussiness, selectedTime]);
 
+
+  //rescheduling fn convert the commen booking process to a function
   const handleReshedule = useCallback(() => {
+    const user = firebaseAuth.currentUser;
     const oldTime = props.navigation.getParam("time");
     updateBookingStatus("Please Wait Your Reschedule is being processed.");
     updateBookingModal(true);
@@ -152,45 +169,64 @@ const BookingScreen = React.memo((props) => {
       .doc(props.navigation.getParam("oldDate"));
     firestore
       .runTransaction(function (transaction) {
-        return transaction.get(timeSlotUpdate).then(function (tSlot) {
-          var currentBookings = tSlot.data();
-          try {
-            var slotBookingNo = currentBookings[selectedTime];
-          } catch {
-            var slotBookingNo = undefined;
-          }
+        return transaction.get(timeSlotUpdate).then(function (slotVal) {
+          const alldata = { ...slotVal.data() };
+          const data = { ...alldata[selectedTime] };
+          const count = 0;
+          const flag = true;
           if (
-            slotBookingNo < selectedBussiness.personsPerSlot ||
-            slotBookingNo == undefined
+            data[user.uid] !== undefined &&
+            data[user.uid].toDate() > new Date()
           ) {
-            var newVal = slotBookingNo ? slotBookingNo + 1 : 1;
-            currentBookings
-              ? transaction.set(timeSlotUpdate, {
-                  ...currentBookings,
-                  [selectedTime]: newVal,
-                })
-              : transaction.set(timeSlotUpdate, { [selectedTime]: newVal });
-            transaction.update(bookingDoc, {
-              time: selectedTime,
-              date: props.navigation.getParam("date"),
-            });
+            //error if slot is not locked becz data[user.uid] undefined
+            data[user.uid] = "booked";
+            alldata[selectedTime] = data;
+            completeBooking(
+              transaction,
+              timeSlotUpdate,
+              bookingDoc,
+              alldata,
+              user
+            );
+            return true;
+          } else {
+            for (let key in data) {
+              if (data[key] === "unbooked" || data[key].toDate() < new Date()) {
+                data[user.uid] = "booked";
+                if (key !== user.uid) {
+                  delete data[key];
+                }
+                flag = false;
+              }
+              count++;
+            }
+            if (flag) {
+              if (count < selectedBussiness.personsPerSlot) {
+                data[user.id] = "booked";
+              }
+            }
+            alldata[selectedTime] = data;
+            completeBooking(
+              transaction,
+              timeSlotUpdate,
+              bookingDoc,
+              alldata,
+              user
+            );
             return true;
           }
         });
       })
       .then(function (res) {
         if (res) {
-          // updateBookingStatus(
-          //   "Your Resheduling is successful check your Manage appointments section for more details."
-          // );
           firestore
             .runTransaction(function (transaction) {
-              return transaction.get(oldTimeSlot).then(function (tSlot) {
-                var currentBookings = tSlot.data();
-                var slotBookingNo = currentBookings[oldTime] - 1;
-                transaction.update(oldTimeSlot, {
-                  [oldTime]: slotBookingNo,
-                });
+              return transaction.get(oldTimeSlot).then(function (slotVal) {
+                const alldata = { ...slotVal.data() };
+                const data = { ...alldata[oldTime] };
+                data[user.uid] = "unbooked";
+                alldata[oldTime] = data;
+                transaction.update(oldTimeSlot, alldata);
                 return true;
               });
             })
@@ -311,13 +347,7 @@ const BookingScreen = React.memo((props) => {
 export default BookingScreen;
 
 const styles = StyleSheet.create({
-  timeSlots: {
-    // justifyContent: "space-around",
-    // flexWrap: "wrap",
-    paddingVertical: 10,
-    width: 100,
-    // paddingHorizontal: 10
-  },
+  
   bookBtn: {
     paddingVertical: 20,
   },

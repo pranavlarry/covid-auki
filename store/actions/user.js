@@ -29,7 +29,7 @@ export const setAppointments = (userId) => {
               data.appointmentStatus,
               data.date,
               data.time,
-              data.bName,
+              data.businessName,
               data.businessId,
             )
           );

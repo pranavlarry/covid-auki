@@ -19,6 +19,7 @@ const ManageAppointments = React.memo((props) => {
   const dispatch = useDispatch();
   const userId = firebaseAuth.currentUser.uid;
   const app = useSelector((state) => state.user.appointments);
+  let flag = true;
   app.sort((a, b) => {
     return new Date(b.date) - new Date(a.date);
   });
@@ -47,6 +48,7 @@ const ManageAppointments = React.memo((props) => {
   useEffect(() => {
     const willFocus = props.navigation.addListener("willFocus", () => {
       loadBookings();
+      flag = false;
     });
     return () => {
       willFocus.remove();
@@ -54,11 +56,9 @@ const ManageAppointments = React.memo((props) => {
   }, [dispatch, userAction.setAppointments]);
 
   useEffect(() => {
-    if (cancelStatus.canceled === true) {
-      // dispatch(userAction.setAppointments(userId));
-      loadBookings();
-      updateCancelStatus((ps) => ({ ...ps, canceled: false }));
-    }
+      if(flag) {
+        loadBookings();
+      }
   }, [cancelStatus.canceled]);
 
   const cancel = useCallback((id, bid, time, date) => {

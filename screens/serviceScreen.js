@@ -26,7 +26,7 @@ const ServiceScreen = React.memo((props) => {
         (holidays.days.filter(
           (val) => val.toLowerCase() === dayString.toLowerCase()
         ).length > 0 ||
-          holidays.date.filter((val) => val === day.dateString).length > 0)
+          holidays.date.filter((val) => val === day.dateString).length > 0) //change to date comparison
       ) {
         updateInvalidDate(true);
       } else {
