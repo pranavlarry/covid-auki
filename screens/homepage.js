@@ -36,8 +36,7 @@ registerForPushNotificationsAsync = async () => {
     }
     token = await Notifications.getExpoPushTokenAsync();
     UserAction.setNotification(token);
-    // console.log(token,"hiiii");
-    // this.setState({ expoPushToken: token });
+
   } else {
     alert(
       "Your loaction won't be correnct and Push Notifications won't work on virtual device!"
@@ -86,6 +85,12 @@ const Homepage = React.memo((props) => {
   }, []);
 
   useEffect (()=> {
+    try {
+      dispatch(UserAction.setUser());
+    }
+    catch {
+      //handle this
+    }
     registerForPushNotificationsAsync();
     getLocationHandler();
   },[])

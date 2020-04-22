@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import Input from "../components/Input";
 import Card from "../components/Card";
-import { firebaseAuth } from "../config";
+import { firebaseAuth,firestore } from "../config";
 
 const FORM_INPUT_UPDATE = "FORM_INPUT_UPDATE";
 
@@ -66,6 +66,13 @@ const SignUp = React.memo((props) => {
           formState.inputValues.password
         )
         .then((result) => {
+          console.log(formState.inputValues.phone);
+          firestore.collection("users").doc(firebaseAuth.currentUser.uid).set({
+            phoneNo: formState.inputValues.phone
+          })
+          .catch (()=> {
+            throw new Error("Can't connect with database")
+          });
           result.user.updateProfile({
             displayName: formState.inputValues.name,
             phoneNumber: formState.inputValues.phone,

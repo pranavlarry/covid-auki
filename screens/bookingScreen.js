@@ -26,6 +26,8 @@ const BookingScreen = React.memo((props) => {
     (state) => state.business.selectedBusiness
   );
 
+  const userDetails= useSelector(state => state.user.user);
+
   //notification token
   const nToken = useSelector((state) => state.user.notificationToken);
 
@@ -51,6 +53,7 @@ const BookingScreen = React.memo((props) => {
       userId: user.uid,
       username: user.displayName,
       email: user.email,
+      contact: userDetails.phoneNo ? userDetails.phoneNo : null,
       time: selectedTime,
       bookingStatus: "open",
       appointmentStatus: "walk-in",
@@ -81,7 +84,7 @@ const BookingScreen = React.memo((props) => {
           return transaction.get(timeSlotUpdate).then(function (slotVal) {
             const alldata = { ...slotVal.data() };
             const data = { ...alldata[selectedTime] };
-            const count = 0;
+            let count = 0;
             const flag = true;
             if (
               data[user.uid] !== undefined &&
@@ -175,7 +178,7 @@ const BookingScreen = React.memo((props) => {
         return transaction.get(timeSlotUpdate).then(function (slotVal) {
           const alldata = { ...slotVal.data() };
           const data = { ...alldata[selectedTime] };
-          const count = 0;
+          let count = 0;
           const flag = true;
           if (
             data[user.uid] !== undefined &&

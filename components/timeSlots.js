@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Button, StyleSheet } from "react-native";
+import { View, Button, StyleSheet, Alert } from "react-native";
 import { useSelector } from "react-redux";
 import { firebaseAuth, firestore } from "../config";
 
@@ -68,96 +68,101 @@ const TimeSlots = (props) => {
   let timer;
   const user = firebaseAuth.currentUser.uid;
 
-
-
   //checking for free slots
   const checkTimeStot = useCallback(
     (bookedSlots, timeSlots) => {
-        let formatedTimeSlots = [];
-        timeSlots.forEach((elem)=>{
-            const slot = bookedSlots[elem];
-            let count = 0;
+      let formatedTimeSlots = [];
+      timeSlots.forEach((elem) => {
+        const slot = bookedSlots[elem];
+        let count = 0;
 
-            try {
-            if(slot[user] !== undefined) {
-              if(slot[user] === 'booked') {
-                  //you already have a booking //handle this Alert here
-                  return formatedTimeSlots;
-              }
-              else if(slot[user].toDate() > new Date()) {
-                console.log("here");
-                  lockTheSlot(elem);
-                  props.updateSelection(elem);
-              }
-            }}
-            catch (errr) {
-
+        try {
+          if (slot[user] !== undefined) {
+            if (slot[user] === "booked") {
+              //you already have a booking //handle this Alert here
+              Alert.alert("You already booked a slot",
+              "You already have a booking the same day",
+              [{text:"Book another"},{text:"Go back"}])
+              // return formatedTimeSlots;
+            } else if (slot[user].toDate() > new Date()) {
+              console.log("here");
+              lockTheSlot(elem);
+              props.updateSelection(elem);
             }
-            for (let key in slot) {
-                if ((slot[key].toDate() > new Date() && key !== user) || slot[key] ==="booked") {
-                    count++;
-                }
+          }
+        } catch (errr) {}
+        for (let key in slot) {
+          try {
+            if (
+              (slot[key].toDate() > new Date() && key !== user) ||
+              slot[key] === "booked"
+            ) {
+              count++;
             }
-            if(count < selectedBussiness.personsPerSlot) {
-                formatedTimeSlots.push(elem);
-            }
-        });
-        return formatedTimeSlots;
+          } catch (err) {}
+        }
+        if (count < selectedBussiness.personsPerSlot) {
+          formatedTimeSlots.push(elem);
+        }
+      });
+      return formatedTimeSlots;
     },
     [selectedBussiness]
   );
 
-  const lockTheSlot = useCallback(async (time)=> {
-      const slot = firestore
+  const lockTheSlot = useCallback(async (time) => {
+    const slot = firestore
       .collection(`timeSlots/${selectedBussiness.id}/bookings`)
-      .doc(props.date);//check if where works
-      try{
-        firestore.runTransaction(function(transaction) {
-            let count = 0,flag=true;
-            return transaction.get(slot).then(function(slotVal) {
-                const alldata = {...slotVal.data()};
-                const data = {...alldata[time]};
-                if(!slotVal.empty) {
-                    for(let key in data) {
-                        if(data[key] === "unbooked" || data[key].toDate() < new Date()) {
-                            console.log("here");
-                            data[user] = new Date(new Date().getTime() + 5*60000);
-                            if(key !== user) {
-                                delete data[key];
-                            }
-                            flag = false;
-                        }
-                        count ++;
-                    }
-                    if(flag) {
-                        if(count < selectedBussiness.personsPerSlot) {
-                            data[user] = new Date(new Date().getTime() + 5*60000);
-                        }
-                    }
+      .doc(props.date); //check if where works
+    try {
+      firestore.runTransaction(function (transaction) {
+        let count = 0,
+          flag = true;
+        return transaction.get(slot).then(function (slotVal) {
+          const alldata = { ...slotVal.data() };
+          const data = { ...alldata[time] };
+          if (!slotVal.empty) {
+            for (let key in data) {
+              count++;
+              try {
+                if (data[key] === "unbooked" || data[key].toDate() < new Date()) {
+                  data[user] = new Date(new Date().getTime() + 1 * 60000);
+                  if (key !== user) {
+                    delete data[key];
+                  }
+                  flag = false;
                 }
-                alldata[time] = data;
-                transaction.set(slot,alldata)
+              }
+              catch (err) {
 
-                return "done";
-            })
-        })
-      }
-      catch (err) {
-        //handle error
-      }
+              }
 
-    
-  },[]);
+            }
+            if (flag) {
+              if (count < selectedBussiness.personsPerSlot) {
+                data[user] = new Date(new Date().getTime() + 5 * 60000);
+              }
+            }
+          }
+          alldata[time] = data;
+          transaction.set(slot, alldata);
+
+          return "done";
+        });
+      });
+    } catch (err) {
+      //handle error
+    }
+  }, []);
 
   const handlePress = useCallback((time) => {
-      if(props.selectedTime !== time) {
-        clearTimeout(timer);
-        timer = setTimeout(()=>{
-          lockTheSlot(time);
-        },15000);
-       props.updateSelection(time);
-      }
-
+    if (props.selectedTime !== time) {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        lockTheSlot(time);
+      }, 15000);
+      props.updateSelection(time);
+    }
   }, []);
 
   useEffect(() => {
@@ -178,11 +183,10 @@ const TimeSlots = (props) => {
       .catch((err) => console.log(err));
   }, []);
 
-
   return (
-      <React.Fragment>
-    {checkedtimeslots.map((elem, index) => {
-        const color = props.selectedTime === elem ? "blue" : "#3492e3";  
+    <React.Fragment>
+      {checkedtimeslots.map((elem, index) => {
+        const color = props.selectedTime === elem ? "blue" : "#3492e3";
         return (
           <View key={index} style={styles.timeSlots}>
             <Button
@@ -194,8 +198,8 @@ const TimeSlots = (props) => {
           </View>
         );
       })}
-      </React.Fragment>
-  )
+    </React.Fragment>
+  );
 };
 
 export default TimeSlots;
@@ -204,5 +208,5 @@ const styles = StyleSheet.create({
   timeSlots: {
     paddingVertical: 10,
     width: 100,
-  }
+  },
 });

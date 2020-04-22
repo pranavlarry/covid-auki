@@ -18,6 +18,7 @@ const ManageAppointments = React.memo((props) => {
   const type = props.navigation.getParam("type");
   const dispatch = useDispatch();
   const userId = firebaseAuth.currentUser.uid;
+  console.log(firebaseAuth.currentUser);
   console.log(userId)
   const app = useSelector((state) => state.user.appointments);
   let flag = true;

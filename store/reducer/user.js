@@ -25,7 +25,7 @@ export default (state=initialState, action)=> {
         case SET_APPOINTMENTS: 
             return {...state, appointments: action.app}
         case SET_USER_DETAILS: 
-            return {...state,user: action.user}
+            return {...state,user: action.data}
         case SET_NOTIFICATION:
             return {...state,notificationToken: action.token}
         default: // need this for default case
