@@ -23,10 +23,15 @@ const ServiceScreen = React.memo((props) => {
       const holidays = selectedBusiness.holidays;
       if (
         holidays != undefined &&
-        (holidays.days.filter(
-          (val) => val.toLowerCase() === dayString.toLowerCase()
-        ).length > 0 ||
-          holidays.date.filter((val) => val === day.dateString).length > 0) //change to date comparison
+        ((holidays.days !== undefined &&
+          holidays.days.filter(
+            (val) => val.toLowerCase() === dayString.toLowerCase()
+          ).length > 0) ||
+          (holidays.date !== undefined &&
+            holidays.date.filter(
+              (val) =>
+                new Date(val).getTime() === new Date(day.dateString).getTime()
+            ).length > 0)) 
       ) {
         updateInvalidDate(true);
       } else {
@@ -63,87 +68,80 @@ const ServiceScreen = React.memo((props) => {
       />
       <Overlay isVisible={calVisible}>
         <React.Fragment>
-        <Text>Select A Date</Text>
-        <Calendar
-          // Initially visible month. Default = Date()
-          current={
-            (()=>{
+          <Text>Select A Date</Text>
+          <Calendar
+            // Initially visible month. Default = Date()
+            current={(() => {
               const current = new Date();
-              return  formatDate(current);
-            })()
-           }
-          // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
-          minDate={
-            (()=>{
+              return formatDate(current);
+            })()}
+            // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
+            minDate={(() => {
               const minDate = new Date();
-              return  formatDate(minDate.setDate(minDate.getDate() + 1));
-            })()
-           }
-          // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
-          maxDate={
-            (()=> {
+              return formatDate(minDate.setDate(minDate.getDate() + 1));
+            })()}
+            // Maximum date that can be selected, dates after maxDate will be grayed out. Default = undefined
+            maxDate={(() => {
               const maxDate = new Date();
-              return formatDate(maxDate.setDate(maxDate.getDate() + 30))
-            })()
-          }
-          // Handler which gets executed on day press. Default = undefined
-          onDayPress={(day) => {
-            checkAvailability(day);
-          }}
-          // Handler which gets executed on day long press. Default = undefined
-          onDayLongPress={(day) => {
-            console.log("selected day", day);
-          }}
-          // Month format in calendar title. Formatting values: http://arshaw.com/xdate/#Formatting
-          monthFormat={"yyyy MM"}
-          // Handler which gets executed when visible month changes in calendar. Default = undefined
-          onMonthChange={(month) => {
-            console.log("month changed", month);
-          }}
-          // Hide month navigation arrows. Default = false
-          hideArrows={false}
-          // Replace default arrows with custom ones (direction can be 'left' or 'right')
-          renderArrow={(direction) => {
-            if(direction==='right') {
-              return (<Text>Next</Text>);
-            }
-            else if (direction === 'left')  {
-              return (<Text>Prev</Text>);
-            }
-          }}
-          // Do not show days of other months in month page. Default = false
-          hideExtraDays={true}
-          // If hideArrows=false and hideExtraDays=false do not switch month when tapping on greyed out
-          // day from another month that is visible in calendar page. Default = false
-          disableMonthChange={false}
-          // If firstDay=1 week starts from Monday. Note that dayNames and dayNamesShort should still start from Sunday.
-          firstDay={1}
-          // Hide day names. Default = false
-          hideDayNames={false}
-          // Show week numbers to the left. Default = false
-          showWeekNumbers={true}
-          // Handler which gets executed when press arrow icon left. It receive a callback can go back month
-          onPressArrowLeft={(substractMonth) => substractMonth()}
-          // Handler which gets executed when press arrow icon right. It receive a callback can go next month
-          onPressArrowRight={(addMonth) => addMonth()}
-          // Disable left arrow. Default = false
-          disableArrowLeft={false}
-          // Disable right arrow. Default = false
-          disableArrowRight={false}
-        />
-        {invalidDate && (
-          <Text>
-            Sorry the date you have selected is a holiday please select an new
-            date
-          </Text>
-        )}
-        <Button
-          title="Close"
-          onPress={() => {
-            updateInvalidDate(false);
-            updateCalVisible(false);
-          }}
-        />
+              return formatDate(maxDate.setDate(maxDate.getDate() + 30));
+            })()}
+            // Handler which gets executed on day press. Default = undefined
+            onDayPress={(day) => {
+              checkAvailability(day);
+            }}
+            // Handler which gets executed on day long press. Default = undefined
+            onDayLongPress={(day) => {
+              console.log("selected day", day);
+            }}
+            // Month format in calendar title. Formatting values: http://arshaw.com/xdate/#Formatting
+            monthFormat={"yyyy MM"}
+            // Handler which gets executed when visible month changes in calendar. Default = undefined
+            onMonthChange={(month) => {
+              console.log("month changed", month);
+            }}
+            // Hide month navigation arrows. Default = false
+            hideArrows={false}
+            // Replace default arrows with custom ones (direction can be 'left' or 'right')
+            renderArrow={(direction) => {
+              if (direction === "right") {
+                return <Text>Next</Text>;
+              } else if (direction === "left") {
+                return <Text>Prev</Text>;
+              }
+            }}
+            // Do not show days of other months in month page. Default = false
+            hideExtraDays={true}
+            // If hideArrows=false and hideExtraDays=false do not switch month when tapping on greyed out
+            // day from another month that is visible in calendar page. Default = false
+            disableMonthChange={false}
+            // If firstDay=1 week starts from Monday. Note that dayNames and dayNamesShort should still start from Sunday.
+            firstDay={1}
+            // Hide day names. Default = false
+            hideDayNames={false}
+            // Show week numbers to the left. Default = false
+            showWeekNumbers={true}
+            // Handler which gets executed when press arrow icon left. It receive a callback can go back month
+            onPressArrowLeft={(substractMonth) => substractMonth()}
+            // Handler which gets executed when press arrow icon right. It receive a callback can go next month
+            onPressArrowRight={(addMonth) => addMonth()}
+            // Disable left arrow. Default = false
+            disableArrowLeft={false}
+            // Disable right arrow. Default = false
+            disableArrowRight={false}
+          />
+          {invalidDate && (
+            <Text>
+              Sorry the date you have selected is a holiday please select an new
+              date
+            </Text>
+          )}
+          <Button
+            title="Close"
+            onPress={() => {
+              updateInvalidDate(false);
+              updateCalVisible(false);
+            }}
+          />
         </React.Fragment>
       </Overlay>
     </View>

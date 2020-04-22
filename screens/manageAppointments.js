@@ -80,12 +80,12 @@ const ManageAppointments = React.memo((props) => {
             });
             firestore
               .runTransaction(function (transaction) {
-                return transaction.get(timeSlot).then(function (tslot) {
-                  const currentDatas = tslot.data();
-                  const currentValue = currentDatas[time] - 1;
-                  transaction.update(timeSlot, {
-                    [time]: currentValue,
-                  });
+                return transaction.get(timeSlot).then(function (slotVal) {
+                  const alldata = { ...slotVal.data() };
+                  const data = { ...alldata[time] };
+                  data[userId] = "unbooked";
+                  alldata[time] = data;
+                  transaction.set(timeSlot, alldata);
                   transaction.update(booking, {
                     appointmentStatus: "cancelled",
                     bookingStatus: "cancelled",
@@ -336,13 +336,17 @@ const ManageAppointments = React.memo((props) => {
       )}
       <Overlay isVisible={cancelStatus.openStatus}>
         <React.Fragment>
-          <Text>{cancelStatus.status}</Text>
+          <View style={styles.cancleCon}>
+          <Text style={styles.cancelText}>{cancelStatus.status}</Text>
+          <View style={styles.cancelBtn}>
           <Button
             title="Close"
             onPress={() => {
               updateCancelStatus({ openStatus: false });
             }}
           />
+          </View>
+          </View>
         </React.Fragment>
       </Overlay>
       <View>
@@ -469,5 +473,17 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center"
+  },
+  cancelBtn: {
+    paddingVertical: 20,
+    width: 100
+  },
+  cancleCon: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cancelText: {
+    textAlign: "center"
   }
 });

@@ -100,17 +100,21 @@ const BookingScreen = React.memo((props) => {
               return "done";
             } else {
               for (let key in data) {
-                if (
-                  data[key] === "unbooked" ||
-                  data[key].toDate() < new Date()
-                ) {
-                  data[user.uid] = "booked";
-                  if (key !== user.uid) {
-                    delete data[key];
-                  }
-                  flag = false;
-                }
                 count++;
+                try {
+                  if (
+                    data[key] === "unbooked" ||
+                    data[key].toDate() < new Date()
+                  ) {
+                    data[user.uid] = "booked";
+                    if (key !== user.uid) {
+                      delete data[key];
+                    }
+                    flag = false;
+                  }
+                } catch (err) {
+                  //data[key].toDate cant be done no need to do any thing
+                }
               }
               if (flag) {
                 if (count < selectedBussiness.personsPerSlot) {
@@ -151,7 +155,6 @@ const BookingScreen = React.memo((props) => {
     }
   }, [firebaseAuth.currentUser, enterpurpose, selectedBussiness, selectedTime]);
 
-
   //rescheduling fn convert the commen booking process to a function
   const handleReshedule = useCallback(() => {
     const user = firebaseAuth.currentUser;
@@ -191,18 +194,25 @@ const BookingScreen = React.memo((props) => {
             return true;
           } else {
             for (let key in data) {
-              if (data[key] === "unbooked" || data[key].toDate() < new Date()) {
-                data[user.uid] = "booked";
-                if (key !== user.uid) {
-                  delete data[key];
-                }
-                flag = false;
-              }
               count++;
+              try {
+                if (
+                  data[key] === "unbooked" ||
+                  data[key].toDate() < new Date()
+                ) {
+                  data[user.uid] = "booked";
+                  if (key !== user.uid) {
+                    delete data[key];
+                  }
+                  flag = false;
+                }
+              } catch (err) {
+                //data[key].toDate() can't be done
+              }
             }
             if (flag) {
               if (count < selectedBussiness.personsPerSlot) {
-                data[user.id] = "booked";
+                data[user.uid] = "booked";
               }
             }
             alldata[selectedTime] = data;
@@ -258,7 +268,7 @@ const BookingScreen = React.memo((props) => {
       <Overlay isVisible={bookingModal}>
         <View style={styles.bookingStatus}>
           <Text style={styles.bookingText}>{bookingStatus}</Text>
-          <View>
+          <View style={styles.gobackBtn}>
             <Button
               style={styles.bookingCpmBtn}
               onPress={() => {
@@ -268,7 +278,7 @@ const BookingScreen = React.memo((props) => {
               title="Go Back Home"
             />
           </View>
-          <View>
+          <View style={styles.gobackBtn}>
             <Button
               style={styles.bookingCpmBtn}
               onPress={() => {
@@ -320,15 +330,6 @@ const BookingScreen = React.memo((props) => {
                     value={enterpurpose}
                   />
                 </View>
-                {/* <Input
-                  id="purpose"
-                  label="Purpose of visit"
-                  required
-                  minLength={5}
-                  errorText="Please enter a valid value."
-                  onInputChange={inputChangeHandler}
-                  initialValue=""
-                /> */}
               </React.Fragment>
             )}
           </View>
@@ -347,7 +348,6 @@ const BookingScreen = React.memo((props) => {
 export default BookingScreen;
 
 const styles = StyleSheet.create({
-  
   bookBtn: {
     paddingVertical: 20,
   },
@@ -358,6 +358,8 @@ const styles = StyleSheet.create({
   },
   bookingText: {
     paddingVertical: 20,
+    textAlign: "center",
+    fontSize: 16,
   },
   bookingCpmBtn: {
     paddingVertical: 20,
@@ -370,4 +372,7 @@ const styles = StyleSheet.create({
     padding: 10,
     minHeight: 300,
   },
+  gobackBtn: {
+    paddingVertical: 10
+  }
 });

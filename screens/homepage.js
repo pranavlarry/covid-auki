@@ -85,6 +85,11 @@ const Homepage = React.memo((props) => {
     updateSearch(enterText);
   }, []);
 
+  useEffect (()=> {
+    registerForPushNotificationsAsync();
+    getLocationHandler();
+  },[])
+
   useEffect(() => {
     if (categories.length === 0) {
       updateError(null);
@@ -98,8 +103,6 @@ const Homepage = React.memo((props) => {
           updateLoadingService(false);
         });
     }
-    registerForPushNotificationsAsync();
-    getLocationHandler();
     // const _notificationSubscription = Notifications.addListener(this._handleNotification);
   }, [categories]);
 
@@ -156,6 +159,8 @@ const Homepage = React.memo((props) => {
     }
     setIsFetching(false);
   };
+
+  // console.log(filteredCat);
 
   const renderGridItem = useCallback((itemData) => {
     return (
